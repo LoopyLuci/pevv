@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-passkey-prf"
+description = "Enables the passkey_prf command without any pre-configured scope."
+commands.allow = ["passkey_prf"]
+
+[[permission]]
+identifier = "deny-passkey-prf"
+description = "Denies the passkey_prf command without any pre-configured scope."
+commands.deny = ["passkey_prf"]

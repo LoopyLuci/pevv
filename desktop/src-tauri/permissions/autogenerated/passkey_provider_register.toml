@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-passkey-provider-register"
+description = "Enables the passkey_provider_register command without any pre-configured scope."
+commands.allow = ["passkey_provider_register"]
+
+[[permission]]
+identifier = "deny-passkey-provider-register"
+description = "Denies the passkey_provider_register command without any pre-configured scope."
+commands.deny = ["passkey_provider_register"]

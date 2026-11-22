@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-presence-get"
+description = "Enables the presence_get command without any pre-configured scope."
+commands.allow = ["presence_get"]
+
+[[permission]]
+identifier = "deny-presence-get"
+description = "Denies the presence_get command without any pre-configured scope."
+commands.deny = ["presence_get"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-usb-keyfile-read"
+description = "Enables the usb_keyfile_read command without any pre-configured scope."
+commands.allow = ["usb_keyfile_read"]
+
+[[permission]]
+identifier = "deny-usb-keyfile-read"
+description = "Denies the usb_keyfile_read command without any pre-configured scope."
+commands.deny = ["usb_keyfile_read"]

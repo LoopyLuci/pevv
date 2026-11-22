@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-link-report-state"
+description = "Enables the link_report_state command without any pre-configured scope."
+commands.allow = ["link_report_state"]
+
+[[permission]]
+identifier = "deny-link-report-state"
+description = "Denies the link_report_state command without any pre-configured scope."
+commands.deny = ["link_report_state"]

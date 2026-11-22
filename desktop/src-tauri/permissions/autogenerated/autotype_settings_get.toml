@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-autotype-settings-get"
+description = "Enables the autotype_settings_get command without any pre-configured scope."
+commands.allow = ["autotype_settings_get"]
+
+[[permission]]
+identifier = "deny-autotype-settings-get"
+description = "Denies the autotype_settings_get command without any pre-configured scope."
+commands.deny = ["autotype_settings_get"]

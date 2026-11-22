@@ -1,0 +1,65 @@
+name: Rust
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'package-lock.json'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'package-lock.json'
+      - '.github/workflows/rust.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: fmt, clippy, test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: System libraries (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev \
+            libdbus-1-dev libudev-dev libxdo-dev patchelf build-essential pkg-config
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Build the desktop web bundle (tauri::generate_context! needs dist-desktop)
+        run: |
+          npm ci
+          npm run build:desktop-web
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: desktop/src-tauri
+      - name: cargo fmt
+        working-directory: desktop/src-tauri
+        run: cargo fmt --check
+      - name: cargo clippy
+        working-directory: desktop/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+      - name: cargo test
+        working-directory: desktop/src-tauri
+        run: cargo test

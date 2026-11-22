@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>PEVV</title>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#0ea5c6"/>
+    </linearGradient>
+  </defs>
+  <path d="M170 252V170a86 86 0 0 1 172 0v82" fill="none" stroke="#c44dd4" stroke-width="76" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="48" y="214" width="416" height="282" rx="96" fill="url(#body)"/>
+  <ellipse cx="170" cy="336" rx="36" ry="44" fill="#0b1226"/>
+  <ellipse cx="342" cy="336" rx="36" ry="44" fill="#0b1226"/>
+  <path d="M206 408q50 48 100 0" fill="none" stroke="#0b1226" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-usb-volumes"
+description = "Enables the usb_volumes command without any pre-configured scope."
+commands.allow = ["usb_volumes"]
+
+[[permission]]
+identifier = "deny-usb-volumes"
+description = "Denies the usb_volumes command without any pre-configured scope."
+commands.deny = ["usb_volumes"]

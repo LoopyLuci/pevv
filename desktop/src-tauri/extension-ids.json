@@ -1,0 +1,4 @@
+{
+  "_note": "Chrome extension ids allowed to link to the PEVV desktop app. Read by the app, the native-messaging host and a unit test. The first id is the one the `key` in extension/manifest.json produces; add the Chrome Web Store id here when it is published.",
+  "ids": ["dolmkecfaekonkkgpjpamipjleindand"]
+}

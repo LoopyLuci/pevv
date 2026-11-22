@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-autotype-cancel"
+description = "Enables the autotype_cancel command without any pre-configured scope."
+commands.allow = ["autotype_cancel"]
+
+[[permission]]
+identifier = "deny-autotype-cancel"
+description = "Denies the autotype_cancel command without any pre-configured scope."
+commands.deny = ["autotype_cancel"]

@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "PEVV",
+  "short_name": "PEVV",
+  "description": "PEVV password vault: fill, save and generate logins from the same encrypted vault as the web app and the desktop app.",
+  "version": "0.2.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1yi7Vj46WJRaSajTIjE+N143omCjSd/DPJFqdjjYzQUdFLkRbEmMDubzBsTbHemMPNUkJRowkErYgHj92QPEfkU5tAbj7cs6G+pA9pAdFHa0QqB0HFEEwxLSxzkcqvdtB/mDx9X8h4vcbRQ7bkmx4ocwUuImO9+dvvF6LckDOn5M1cSU0E1Nh92G49Nv98Yumswirja6cLF1iAOXLPHdDQIf/L4YfovKnhu4dgGAp+oU6HRQ6xn6Fvq4SjDkRUecKJz3xkVEXMnbaMEMi7XjOq/4IAH1TidOcDDlzQgHvOSNiIEsW/2WjJtcdHuyRCAc2yZHdW133QGMh7xPs33SXQIDAQAB",
+  "minimum_chrome_version": "120",
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_popup": "extension/popup.html",
+    "default_title": "PEVV",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
+  "background": { "service_worker": "worker.js", "type": "module" },
+  "permissions": ["activeTab", "storage", "scripting", "idle", "alarms"],
+  "optional_permissions": ["nativeMessaging"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "content_security_policy": { "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'" }
+}

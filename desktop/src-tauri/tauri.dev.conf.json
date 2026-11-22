@@ -1,0 +1,6 @@
+{
+  "build": {
+    "devUrl": "http://localhost:1421",
+    "beforeDevCommand": "npx vite -c vite.desktop.config.ts --port 1421 --strictPort"
+  }
+}

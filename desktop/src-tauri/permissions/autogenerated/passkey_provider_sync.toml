@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-passkey-provider-sync"
+description = "Enables the passkey_provider_sync command without any pre-configured scope."
+commands.allow = ["passkey_provider_sync"]
+
+[[permission]]
+identifier = "deny-passkey-provider-sync"
+description = "Denies the passkey_provider_sync command without any pre-configured scope."
+commands.deny = ["passkey_provider_sync"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-autotype-confirm"
+description = "Enables the autotype_confirm command without any pre-configured scope."
+commands.allow = ["autotype_confirm"]
+
+[[permission]]
+identifier = "deny-autotype-confirm"
+description = "Denies the autotype_confirm command without any pre-configured scope."
+commands.deny = ["autotype_confirm"]

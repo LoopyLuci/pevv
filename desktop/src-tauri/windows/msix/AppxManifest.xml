@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest for PEVV as a Windows 11 passkey provider (plugin authenticator).
+  Not used by the NSIS / MSI installers. build-msix.ps1 fills the @...@ placeholders and packs it.
+
+  What is declared, and why:
+  - runFullTrust: PEVV is a normal desktop (Win32) app packaged for identity, not a UWP app.
+  - windows.comServer: Windows starts the COM class named below when a website asks for a passkey and
+    the person picked PEVV. The class id must equal CLSID in src/provider_core.rs (a unit test checks it).
+    If PEVV is already running, Windows talks to the running copy (it registers the class factory at
+    startup), so the single-instance rule never gets in the way.
+  - No other extension is declared: Windows learns about the authenticator from the registration call
+    (WebAuthNPluginAddAuthenticator, run by "Add PEVV to Windows" in Settings), not from the manifest.
+    (A shipping third-party provider's manifest declares only the COM server too. Microsoft's own
+    article on the plugin model could not be fetched, so a manifest element it may require is unconfirmed.)
+
+  MinVersion is the lowest Windows 11 build with the plugin passkey API (24H2). Older Windows refuses
+  to install the package, which is intended: this package has no other purpose.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap rescap com">
+
+  <!-- Publisher must be exactly the Subject of the certificate that signs the package. -->
+  <Identity Name="@IDENTITY_NAME@" Publisher="@PUBLISHER@" Version="@VERSION@" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>PEVV</DisplayName>
+    <PublisherDisplayName>@PUBLISHER_DISPLAY_NAME@</PublisherDisplayName>
+    <Description>PEVV password and secrets vault, and a passkey provider for Windows.</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.26100.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="PEVV" Executable="pevv-desktop.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="PEVV"
+        Description="PEVV password and secrets vault"
+        BackgroundColor="#070b16"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="pevv-desktop.exe" Arguments="--passkey-provider" DisplayName="PEVV passkey provider">
+              <com:Class Id="56b40049-0a16-42c3-bded-1de50937b256" DisplayName="PEVV passkey provider" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

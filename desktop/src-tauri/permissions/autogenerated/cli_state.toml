@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cli-state"
+description = "Enables the cli_state command without any pre-configured scope."
+commands.allow = ["cli_state"]
+
+[[permission]]
+identifier = "deny-cli-state"
+description = "Denies the cli_state command without any pre-configured scope."
+commands.deny = ["cli_state"]

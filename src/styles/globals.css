@@ -1,0 +1,86 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/* Palette: space-separated RGB so Tailwind's /alpha syntax works (e.g. bg-accent-cyan/40). */
+:root {
+  --c-space-void: 10 14 26;
+  --c-space-deep: 18 24 46;
+  --c-space-surface: 28 36 66;
+  --c-space-border: 54 66 102;
+
+  --c-ink-primary: 232 236 244;
+  --c-ink-secondary: 176 186 210;
+  --c-ink-muted: 120 132 162;
+
+  --c-accent-cyan: 77 212 212;
+  --c-accent-magenta: 196 77 212;
+  --c-accent-gold: 255 184 77;
+  --c-accent-green: 100 220 140;
+  --c-accent-red: 232 100 100;
+}
+
+html, body, #root { height: 100%; }
+html {
+  font-size: calc(clamp(0.875rem, 0.8rem + 0.35vw, 1.125rem));
+  -webkit-text-size-adjust: 100%;
+}
+html, body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100dvh;
+}
+body {
+  background: rgb(var(--c-space-void));
+  color: rgb(var(--c-ink-primary));
+  overflow-x: hidden;
+  max-width: 100vw;
+  touch-action: manipulation;
+}
+#root {
+  overflow: hidden;
+  max-width: 100vw;
+  height: 100dvh;
+}
+@supports not (height: 100dvh) {
+  html, body, #root { height: 100vh; }
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--c-accent-cyan));
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* PEVV surfaces fill the window. */
+html.lv-pevv-app,
+html.lv-pevv-app body,
+html.lv-pevv-app #root {
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  background: #070b16;
+}
+html.lv-pevv-app [data-testid="pevv-standalone"],
+html.lv-pevv-app [data-testid="pevv-app"] {
+  height: 100%;
+  min-height: 0;
+}

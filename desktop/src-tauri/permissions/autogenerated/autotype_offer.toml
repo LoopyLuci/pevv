@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-autotype-offer"
+description = "Enables the autotype_offer command without any pre-configured scope."
+commands.allow = ["autotype_offer"]
+
+[[permission]]
+identifier = "deny-autotype-offer"
+description = "Denies the autotype_offer command without any pre-configured scope."
+commands.deny = ["autotype_offer"]

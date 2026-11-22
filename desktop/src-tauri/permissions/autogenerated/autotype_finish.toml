@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-autotype-finish"
+description = "Enables the autotype_finish command without any pre-configured scope."
+commands.allow = ["autotype_finish"]
+
+[[permission]]
+identifier = "deny-autotype-finish"
+description = "Denies the autotype_finish command without any pre-configured scope."
+commands.deny = ["autotype_finish"]

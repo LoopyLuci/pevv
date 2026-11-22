@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>PEVV</title>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#0ea5c6"/>
+    </linearGradient>
+    <linearGradient id="shackle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e879f9"/>
+      <stop offset="1" stop-color="#c44dd4"/>
+    </linearGradient>
+  </defs>
+  <path d="M176 248V176a80 80 0 0 1 160 0v72" fill="none" stroke="#7a2d86" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" opacity=".35" transform="translate(0 8)"/>
+  <path d="M176 248V176a80 80 0 0 1 160 0v72" fill="none" stroke="url(#shackle)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="80" y="224" width="352" height="256" rx="84" fill="#0b7f9e" opacity=".45" transform="translate(0 10)"/>
+  <rect x="80" y="224" width="352" height="256" rx="84" fill="url(#body)"/>
+  <path d="M130 300a60 60 0 0 1 56-52" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" opacity=".55"/>
+  <ellipse cx="196" cy="340" rx="24" ry="30" fill="#0b1226"/>
+  <ellipse cx="316" cy="340" rx="24" ry="30" fill="#0b1226"/>
+  <circle cx="204" cy="328" r="9" fill="#fff"/>
+  <circle cx="324" cy="328" r="9" fill="#fff"/>
+  <ellipse cx="150" cy="392" rx="26" ry="16" fill="#f472b6" opacity=".7"/>
+  <ellipse cx="362" cy="392" rx="26" ry="16" fill="#f472b6" opacity=".7"/>
+  <path d="M232 384q24 28 48 0" fill="none" stroke="#0b1226" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

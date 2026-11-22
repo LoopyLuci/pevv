@@ -1,0 +1,14 @@
+# Security headers for the PEVV web app on Cloudflare Pages or Netlify (same file format).
+# For any other static host, send the same headers. See docs/CLIENT_WEB.md.
+#
+# connect-src: 'self' plus Supabase (https + wss) so optional sync and the vault-QR relay work.
+# If you self-host sync on another domain, replace https://*.supabase.co / wss://*.supabase.co with
+# your own origin; if you run without sync, you can reduce it to 'self'.
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(self), publickey-credentials-get=(self), publickey-credentials-create=(self), geolocation=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin

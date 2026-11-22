@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-passkey-provider-unregister"
+description = "Enables the passkey_provider_unregister command without any pre-configured scope."
+commands.allow = ["passkey_provider_unregister"]
+
+[[permission]]
+identifier = "deny-passkey-provider-unregister"
+description = "Denies the passkey_provider_unregister command without any pre-configured scope."
+commands.deny = ["passkey_provider_unregister"]

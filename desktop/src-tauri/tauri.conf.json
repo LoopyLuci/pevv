@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PEVV",
+  "version": "0.1.0",
+  "identifier": "app.luciverse.pevv",
+  "build": {
+    "frontendDist": "../../dist-desktop"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "PEVV",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 480,
+        "minHeight": 520,
+        "center": true,
+        "visible": true,
+        "backgroundColor": "#070b16"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi", "appimage", "deb"],
+    "category": "Utility",
+    "shortDescription": "PEVV password and secrets vault",
+    "longDescription": "PEVV is an encrypted vault for passwords, secrets and one-time codes. The vault file is encrypted with Argon2id and AES-GCM and is the same format as the PEVV web app, Android app and browser extension.",
+    "copyright": "PEVV contributors",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": { "installMode": "currentUser", "installerHooks": "windows/hooks.nsh" }
+    },
+    "linux": {
+      "deb": { "depends": [] }
+    }
+  }
+}

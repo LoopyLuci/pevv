@@ -1,0 +1,25 @@
+title = "PEVV gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Build output and dependencies are never committed; this keeps local directory scans fast."
+paths = [
+  '''node_modules/''',
+  '''dist(-[a-z]+)*/''',
+  '''desktop/src-tauri/target/''',
+  '''test-results/''',
+  '''package-lock\.json''',
+  '''Cargo\.lock''',
+]
+
+[[allowlists]]
+description = "The extension manifest key is the PUBLIC half of the extension id key pair (docs/RELEASING.md). Not a secret."
+paths = ['''extension/manifest\.json''']
+regexes = ['''"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA[A-Za-z0-9+/=]+"''']
+
+[[allowlists]]
+description = "A public authenticator AAGUID constant (identifies the PEVV passkey provider, like a model number)."
+paths = ['''src/pevv/passkeyProvider\.ts''']
+regexes = ['''PASSKEY_PROVIDER_AAGUID''']

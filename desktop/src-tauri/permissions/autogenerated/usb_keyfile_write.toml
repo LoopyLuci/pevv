@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-usb-keyfile-write"
+description = "Enables the usb_keyfile_write command without any pre-configured scope."
+commands.allow = ["usb_keyfile_write"]
+
+[[permission]]
+identifier = "deny-usb-keyfile-write"
+description = "Denies the usb_keyfile_write command without any pre-configured scope."
+commands.deny = ["usb_keyfile_write"]

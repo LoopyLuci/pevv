@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-link-unpair"
+description = "Enables the link_unpair command without any pre-configured scope."
+commands.allow = ["link_unpair"]
+
+[[permission]]
+identifier = "deny-link-unpair"
+description = "Denies the link_unpair command without any pre-configured scope."
+commands.deny = ["link_unpair"]

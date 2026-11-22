@@ -1,0 +1,67 @@
+{
+  "name": "pevv",
+  "version": "0.2.0",
+  "description": "PEVV: an open-source, zero-knowledge password and environment-variable vault for the web, browsers and desktop.",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "author": "RechargedIdeas",
+  "homepage": "https://github.com/RechargedIdeas/pevv#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RechargedIdeas/pevv.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RechargedIdeas/pevv/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "build:extension": "node scripts/build-extension.mjs",
+    "package:extension": "node scripts/build-extension.mjs --zip",
+    "build:desktop-web": "vite build -c vite.desktop.config.ts",
+    "desktop:dev": "tauri dev --config desktop/src-tauri/tauri.dev.conf.json",
+    "desktop:build": "node scripts/desktop-build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:extension": "playwright test -c playwright.extension.config.ts",
+    "test:extension:firefox": "node tests/e2e-extension/firefox/pevv-firefox.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@tauri-apps/api": "^2.12.0",
+    "hash-wasm": "^4.13.0",
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.48.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@tauri-apps/cli": "^2.12.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^17.13.0",
+    "jsdom": "^25.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^6.0.0",
+    "vitest": "^5.1.1"
+  }
+}

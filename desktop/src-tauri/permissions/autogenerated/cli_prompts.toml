@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cli-prompts"
+description = "Enables the cli_prompts command without any pre-configured scope."
+commands.allow = ["cli_prompts"]
+
+[[permission]]
+identifier = "deny-cli-prompts"
+description = "Denies the cli_prompts command without any pre-configured scope."
+commands.deny = ["cli_prompts"]

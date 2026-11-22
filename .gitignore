@@ -1,0 +1,37 @@
+# dependencies and build output
+node_modules/
+dist/
+dist-extension/
+dist-extension-firefox/
+dist-extension-zips/
+dist-desktop/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+*.tsbuildinfo
+
+# tests
+test-results/
+playwright-report/
+coverage/
+
+# local configuration and secrets (never commit these)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.jks
+*.keystore
+keystore.properties
+*.pevvkey
+*.vault.json
+vault.json
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+*.tmp
+*.tmp.mjs

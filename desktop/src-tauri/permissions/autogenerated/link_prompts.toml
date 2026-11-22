@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-link-prompts"
+description = "Enables the link_prompts command without any pre-configured scope."
+commands.allow = ["link_prompts"]
+
+[[permission]]
+identifier = "deny-link-prompts"
+description = "Denies the link_prompts command without any pre-configured scope."
+commands.deny = ["link_prompts"]
