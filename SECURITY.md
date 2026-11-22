@@ -5,7 +5,7 @@
 **Please do not open a public issue, pull request or discussion for a security problem.**
 
 Report it privately with a **GitHub Security Advisory**:
-<https://github.com/RechargedIdeas/pevv/security/advisories/new> (Security tab > *Report a vulnerability*).
+<https://github.com/LoopyLuci/pevv/security/advisories/new> (Security tab > *Report a vulnerability*).
 
 Include what you found, the affected client and version, steps to reproduce and the impact. Do not include a real vault or real
 credentials. We aim to acknowledge a report within 5 working days and to agree on a fix and disclosure timeline with you. Please give

@@ -6,7 +6,7 @@
 <p align="center"><b>Password &amp; Environment Variable Vault</b><br/>An open-source, zero-knowledge vault for logins, API keys, secrets and <code>.env</code> variables.<br/>Web app, browser extension and desktop app. One encrypted file format.</p>
 
 <p align="center">
-  <a href="https://github.com/RechargedIdeas/pevv/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/RechargedIdeas/pevv/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/LoopyLuci/pevv/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/LoopyLuci/pevv/actions/workflows/ci.yml/badge.svg" /></a>
   <img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-blue" />
 </p>
 
@@ -63,7 +63,7 @@ Requirements: Node.js 20 or newer (`.nvmrc` says 22). For the desktop app also R
 [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```bash
-git clone https://github.com/RechargedIdeas/pevv.git
+git clone https://github.com/LoopyLuci/pevv.git
 cd pevv
 npm ci
 
@@ -101,5 +101,5 @@ docs/                architecture, vault format, crypto, clients, sync, releasin
 ## Contributing, security, license
 
 - [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [AGENTS.md](AGENTS.md) for AI coding agents.
-- Report vulnerabilities **privately** via [GitHub Security Advisories](https://github.com/RechargedIdeas/pevv/security/advisories/new). See [SECURITY.md](SECURITY.md).
+- Report vulnerabilities **privately** via [GitHub Security Advisories](https://github.com/LoopyLuci/pevv/security/advisories/new). See [SECURITY.md](SECURITY.md).
 - Licensed under the [GNU General Public License v3.0](LICENSE) (`GPL-3.0-only`).

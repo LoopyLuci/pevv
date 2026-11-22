@@ -5,14 +5,14 @@
   "private": true,
   "type": "module",
   "license": "GPL-3.0-only",
-  "author": "RechargedIdeas",
-  "homepage": "https://github.com/RechargedIdeas/pevv#readme",
+  "author": "LoopyLuci",
+  "homepage": "https://github.com/LoopyLuci/pevv#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RechargedIdeas/pevv.git"
+    "url": "git+https://github.com/LoopyLuci/pevv.git"
   },
   "bugs": {
-    "url": "https://github.com/RechargedIdeas/pevv/issues"
+    "url": "https://github.com/LoopyLuci/pevv/issues"
   },
   "engines": {
     "node": ">=20"

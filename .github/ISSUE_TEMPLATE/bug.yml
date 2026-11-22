@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Security problem?** Do not file it here. Use the [private advisory form](https://github.com/RechargedIdeas/pevv/security/advisories/new).
+        **Security problem?** Do not file it here. Use the [private advisory form](https://github.com/LoopyLuci/pevv/security/advisories/new).
         **Never paste a real vault file, password, recovery code or token.**
   - type: dropdown
     id: client
