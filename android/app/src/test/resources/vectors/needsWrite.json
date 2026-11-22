@@ -1,0 +1,71 @@
+[
+  {
+    "prev": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 1000,
+      "agent": "x"
+    },
+    "next": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 2000,
+      "agent": "x"
+    },
+    "needs": false
+  },
+  {
+    "prev": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 1000,
+      "agent": "x"
+    },
+    "next": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "b",
+      "kind": "phone",
+      "added": 1,
+      "seen": 1500,
+      "agent": "x"
+    },
+    "needs": true
+  },
+  {
+    "prev": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 1000,
+      "agent": "x"
+    },
+    "next": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 3601001,
+      "agent": "x"
+    },
+    "needs": true
+  },
+  {
+    "prev": null,
+    "next": {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "a",
+      "kind": "phone",
+      "added": 1,
+      "seen": 5,
+      "agent": "x"
+    },
+    "needs": true
+  }
+]

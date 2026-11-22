@@ -2,10 +2,11 @@
 
 PEVV history. PEVV was developed as part of Luciverse until it moved to this repository; the entries below are the
 PEVV entries from that project's log, lightly cleaned. Earlier entries mention the Luciverse site, the Android app and
-the original sync; those no longer apply to this repository (see [docs/CLIENT_ANDROID.md](CLIENT_ANDROID.md)).
+the original sync; those do not apply to this repository as written (the Android app here is a new native app, see [CLIENT_ANDROID.md](CLIENT_ANDROID.md)).
 
 ## Unreleased
 
+- Native Android app in `android/` (Kotlin, Compose): same vault file, sync, relay and QR transfer as the other clients, with biometric unlock, an autofill service and a Credential Manager passkey provider. The Kotlin crypto and vault code is checked against vectors generated from the TypeScript code and the other way round (`scripts/android-vectors.mjs`, `tests/unit/pevv.android.test.ts`). Unsigned APK only; autofill, passkeys and biometrics are untested on real devices. Design: [ANDROID.md](ANDROID.md).
 - Standalone repository: GPL-3.0, no dependency on the Luciverse game, optional self-hosted Supabase sync (`VITE_PEVV_SYNC_URL`), passkey rpId from `PEVV_RP_ID`, CI, release workflow, security policy, open-source documentation.
 - Removed from this repository (they stay in Luciverse): the in-game HUD launcher, the in-game autofill buttons and save offers, and the game terminal commands (`vault ...`, `$VAR` expansion).
 - Vault QR links are built from `VITE_PEVV_PUBLIC_URL`; without it the QR carries the bare code.

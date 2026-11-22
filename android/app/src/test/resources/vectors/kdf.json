@@ -1,0 +1,78 @@
+[
+  {
+    "name": "argon2id-floor",
+    "password": "correct horse battery staple",
+    "kdf": {
+      "alg": "argon2id",
+      "m": 19456,
+      "t": 2,
+      "p": 1,
+      "salt": "AQgPFh0kKzI5QEdOVVxjag=="
+    },
+    "stretchHex": "6a68519f7175ecb2c952b2cb0b136c401a447825ff33f9b435b4680e0c9a7287",
+    "passwordKekHex": "79504b6ad7b8f97c21e44d35d8a963054c83836dbbc44c799ee39c20359b6146"
+  },
+  {
+    "name": "argon2id-default-params",
+    "password": "correct horse battery staple",
+    "kdf": {
+      "alg": "argon2id",
+      "m": 65536,
+      "t": 3,
+      "p": 1,
+      "salt": "AgkQFx4lLDM6QUhPVl1kaw=="
+    },
+    "stretchHex": "99045ddadf30060855953f45a352e16423bcfd090be682c0154030ece438d263",
+    "passwordKekHex": "807dee9628585dcb6f29f098d8b5d5c73b86451d0da938cc867bdb23aa0c98a1"
+  },
+  {
+    "name": "argon2id-nfc-composed",
+    "password": "café-pässwörd ✓",
+    "kdf": {
+      "alg": "argon2id",
+      "m": 19456,
+      "t": 2,
+      "p": 1,
+      "salt": "AwoRGB8mLTQ7QklQV15lbA=="
+    },
+    "stretchHex": "6817fe7812a97b7966dc608d0cdbf5f8416056a5c455df8d37412449eb2ffac2",
+    "passwordKekHex": "d5bccffde20c48cf007e1ea310cdaf34ae3bbbe4dab4b8c70a84add2d3828935"
+  },
+  {
+    "name": "argon2id-nfc-decomposed",
+    "password": "café-pässwörd ✓",
+    "kdf": {
+      "alg": "argon2id",
+      "m": 19456,
+      "t": 2,
+      "p": 1,
+      "salt": "AwoRGB8mLTQ7QklQV15lbA=="
+    },
+    "stretchHex": "6817fe7812a97b7966dc608d0cdbf5f8416056a5c455df8d37412449eb2ffac2",
+    "passwordKekHex": "d5bccffde20c48cf007e1ea310cdaf34ae3bbbe4dab4b8c70a84add2d3828935"
+  },
+  {
+    "name": "argon2id-parallel-2",
+    "password": "p@ss",
+    "kdf": {
+      "alg": "argon2id",
+      "m": 19456,
+      "t": 2,
+      "p": 2,
+      "salt": "BAsSGSAnLjU8Q0pRWF9mbQ=="
+    },
+    "stretchHex": "229496cdb3efd2e3a450ff535372160824978b5359af8575a9fd80f4240ab5c5",
+    "passwordKekHex": "4ba33d646726517c0716b8c8046586b3209bec94a411a27ded23e2cb2485ddf5"
+  },
+  {
+    "name": "pbkdf2-floor",
+    "password": "correct horse battery staple",
+    "kdf": {
+      "alg": "pbkdf2-sha256",
+      "iter": 600000,
+      "salt": "BQwTGiEoLzY9REtSWWBnbg=="
+    },
+    "stretchHex": "4cad8ec1d60985ead7fe2c7c055b6e6859e8e1289db4294350b2dd0b2e580d9d",
+    "passwordKekHex": "ed72ec02c52b10974000228baf832b163bba1cc223fd7780dc2c1ac3727e53c3"
+  }
+]

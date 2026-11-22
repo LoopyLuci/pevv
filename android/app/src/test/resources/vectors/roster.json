@@ -1,0 +1,991 @@
+[
+  {
+    "a": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "b": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One renamed",
+          "kind": "phone",
+          "added": 7,
+          "seen": 20,
+          "agent": "x"
+        },
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000002",
+          "name": "Two",
+          "kind": "phone",
+          "added": 15,
+          "seen": 15,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "merged": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One renamed",
+          "kind": "phone",
+          "added": 5,
+          "seen": 20,
+          "agent": "x"
+        },
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000002",
+          "name": "Two",
+          "kind": "phone",
+          "added": 15,
+          "seen": 15,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "same": false,
+    "sameMerged": false
+  },
+  {
+    "a": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        },
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000003",
+          "name": "Three",
+          "kind": "phone",
+          "added": 1,
+          "seen": 30,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "b": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000002",
+          "name": "Two",
+          "kind": "phone",
+          "added": 15,
+          "seen": 15,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": [
+        "aaaaaaaa-0000-0000-0000-000000000003",
+        "not an id",
+        "aaaaaaaa-0000-0000-0000-000000000003"
+      ]
+    },
+    "merged": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000002",
+          "name": "Two",
+          "kind": "phone",
+          "added": 15,
+          "seen": 15,
+          "agent": "x"
+        },
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": [
+        "aaaaaaaa-0000-0000-0000-000000000003"
+      ]
+    },
+    "same": false,
+    "sameMerged": false
+  },
+  {
+    "a": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 0,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "b": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 9,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "merged": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 9,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "same": false,
+    "sameMerged": false
+  },
+  {
+    "a": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "b": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "merged": {
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-0000-0000-000000000001",
+          "name": "One",
+          "kind": "phone",
+          "added": 5,
+          "seen": 10,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "same": true,
+    "sameMerged": true
+  },
+  {
+    "a": {
+      "devices": [
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000000",
+          "name": "D0",
+          "kind": "phone",
+          "added": 1,
+          "seen": 100,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000001",
+          "name": "D1",
+          "kind": "phone",
+          "added": 1,
+          "seen": 101,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000002",
+          "name": "D2",
+          "kind": "phone",
+          "added": 1,
+          "seen": 102,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000003",
+          "name": "D3",
+          "kind": "phone",
+          "added": 1,
+          "seen": 103,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000004",
+          "name": "D4",
+          "kind": "phone",
+          "added": 1,
+          "seen": 104,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000005",
+          "name": "D5",
+          "kind": "phone",
+          "added": 1,
+          "seen": 105,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000006",
+          "name": "D6",
+          "kind": "phone",
+          "added": 1,
+          "seen": 106,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000007",
+          "name": "D7",
+          "kind": "phone",
+          "added": 1,
+          "seen": 107,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000008",
+          "name": "D8",
+          "kind": "phone",
+          "added": 1,
+          "seen": 108,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000009",
+          "name": "D9",
+          "kind": "phone",
+          "added": 1,
+          "seen": 109,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000010",
+          "name": "D10",
+          "kind": "phone",
+          "added": 1,
+          "seen": 110,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000011",
+          "name": "D11",
+          "kind": "phone",
+          "added": 1,
+          "seen": 111,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000012",
+          "name": "D12",
+          "kind": "phone",
+          "added": 1,
+          "seen": 112,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000013",
+          "name": "D13",
+          "kind": "phone",
+          "added": 1,
+          "seen": 113,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000014",
+          "name": "D14",
+          "kind": "phone",
+          "added": 1,
+          "seen": 114,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000015",
+          "name": "D15",
+          "kind": "phone",
+          "added": 1,
+          "seen": 115,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000016",
+          "name": "D16",
+          "kind": "phone",
+          "added": 1,
+          "seen": 116,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000017",
+          "name": "D17",
+          "kind": "phone",
+          "added": 1,
+          "seen": 117,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000018",
+          "name": "D18",
+          "kind": "phone",
+          "added": 1,
+          "seen": 118,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000019",
+          "name": "D19",
+          "kind": "phone",
+          "added": 1,
+          "seen": 119,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000020",
+          "name": "D20",
+          "kind": "phone",
+          "added": 1,
+          "seen": 120,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000021",
+          "name": "D21",
+          "kind": "phone",
+          "added": 1,
+          "seen": 121,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000022",
+          "name": "D22",
+          "kind": "phone",
+          "added": 1,
+          "seen": 122,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000023",
+          "name": "D23",
+          "kind": "phone",
+          "added": 1,
+          "seen": 123,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000024",
+          "name": "D24",
+          "kind": "phone",
+          "added": 1,
+          "seen": 124,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000025",
+          "name": "D25",
+          "kind": "phone",
+          "added": 1,
+          "seen": 125,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000026",
+          "name": "D26",
+          "kind": "phone",
+          "added": 1,
+          "seen": 126,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000027",
+          "name": "D27",
+          "kind": "phone",
+          "added": 1,
+          "seen": 127,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000028",
+          "name": "D28",
+          "kind": "phone",
+          "added": 1,
+          "seen": 128,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000029",
+          "name": "D29",
+          "kind": "phone",
+          "added": 1,
+          "seen": 129,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "b": {
+      "devices": [
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000020",
+          "name": "D20",
+          "kind": "phone",
+          "added": 1,
+          "seen": 120,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000021",
+          "name": "D21",
+          "kind": "phone",
+          "added": 1,
+          "seen": 121,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000022",
+          "name": "D22",
+          "kind": "phone",
+          "added": 1,
+          "seen": 122,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000023",
+          "name": "D23",
+          "kind": "phone",
+          "added": 1,
+          "seen": 123,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000024",
+          "name": "D24",
+          "kind": "phone",
+          "added": 1,
+          "seen": 124,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000025",
+          "name": "D25",
+          "kind": "phone",
+          "added": 1,
+          "seen": 125,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000026",
+          "name": "D26",
+          "kind": "phone",
+          "added": 1,
+          "seen": 126,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000027",
+          "name": "D27",
+          "kind": "phone",
+          "added": 1,
+          "seen": 127,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000028",
+          "name": "D28",
+          "kind": "phone",
+          "added": 1,
+          "seen": 128,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000029",
+          "name": "D29",
+          "kind": "phone",
+          "added": 1,
+          "seen": 129,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000030",
+          "name": "D30",
+          "kind": "phone",
+          "added": 1,
+          "seen": 130,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000031",
+          "name": "D31",
+          "kind": "phone",
+          "added": 1,
+          "seen": 131,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000032",
+          "name": "D32",
+          "kind": "phone",
+          "added": 1,
+          "seen": 132,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000033",
+          "name": "D33",
+          "kind": "phone",
+          "added": 1,
+          "seen": 133,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000034",
+          "name": "D34",
+          "kind": "phone",
+          "added": 1,
+          "seen": 134,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000035",
+          "name": "D35",
+          "kind": "phone",
+          "added": 1,
+          "seen": 135,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000036",
+          "name": "D36",
+          "kind": "phone",
+          "added": 1,
+          "seen": 136,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000037",
+          "name": "D37",
+          "kind": "phone",
+          "added": 1,
+          "seen": 137,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000038",
+          "name": "D38",
+          "kind": "phone",
+          "added": 1,
+          "seen": 138,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000039",
+          "name": "D39",
+          "kind": "phone",
+          "added": 1,
+          "seen": 139,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000040",
+          "name": "D40",
+          "kind": "phone",
+          "added": 1,
+          "seen": 140,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000041",
+          "name": "D41",
+          "kind": "phone",
+          "added": 1,
+          "seen": 141,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000042",
+          "name": "D42",
+          "kind": "phone",
+          "added": 1,
+          "seen": 142,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000043",
+          "name": "D43",
+          "kind": "phone",
+          "added": 1,
+          "seen": 143,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000044",
+          "name": "D44",
+          "kind": "phone",
+          "added": 1,
+          "seen": 144,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "merged": {
+      "devices": [
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000044",
+          "name": "D44",
+          "kind": "phone",
+          "added": 1,
+          "seen": 144,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000043",
+          "name": "D43",
+          "kind": "phone",
+          "added": 1,
+          "seen": 143,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000042",
+          "name": "D42",
+          "kind": "phone",
+          "added": 1,
+          "seen": 142,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000041",
+          "name": "D41",
+          "kind": "phone",
+          "added": 1,
+          "seen": 141,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000040",
+          "name": "D40",
+          "kind": "phone",
+          "added": 1,
+          "seen": 140,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000039",
+          "name": "D39",
+          "kind": "phone",
+          "added": 1,
+          "seen": 139,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000038",
+          "name": "D38",
+          "kind": "phone",
+          "added": 1,
+          "seen": 138,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000037",
+          "name": "D37",
+          "kind": "phone",
+          "added": 1,
+          "seen": 137,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000036",
+          "name": "D36",
+          "kind": "phone",
+          "added": 1,
+          "seen": 136,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000035",
+          "name": "D35",
+          "kind": "phone",
+          "added": 1,
+          "seen": 135,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000034",
+          "name": "D34",
+          "kind": "phone",
+          "added": 1,
+          "seen": 134,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000033",
+          "name": "D33",
+          "kind": "phone",
+          "added": 1,
+          "seen": 133,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000032",
+          "name": "D32",
+          "kind": "phone",
+          "added": 1,
+          "seen": 132,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000031",
+          "name": "D31",
+          "kind": "phone",
+          "added": 1,
+          "seen": 131,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000030",
+          "name": "D30",
+          "kind": "phone",
+          "added": 1,
+          "seen": 130,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000029",
+          "name": "D29",
+          "kind": "phone",
+          "added": 1,
+          "seen": 129,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000028",
+          "name": "D28",
+          "kind": "phone",
+          "added": 1,
+          "seen": 128,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000027",
+          "name": "D27",
+          "kind": "phone",
+          "added": 1,
+          "seen": 127,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000026",
+          "name": "D26",
+          "kind": "phone",
+          "added": 1,
+          "seen": 126,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000025",
+          "name": "D25",
+          "kind": "phone",
+          "added": 1,
+          "seen": 125,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000024",
+          "name": "D24",
+          "kind": "phone",
+          "added": 1,
+          "seen": 124,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000023",
+          "name": "D23",
+          "kind": "phone",
+          "added": 1,
+          "seen": 123,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000022",
+          "name": "D22",
+          "kind": "phone",
+          "added": 1,
+          "seen": 122,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000021",
+          "name": "D21",
+          "kind": "phone",
+          "added": 1,
+          "seen": 121,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000020",
+          "name": "D20",
+          "kind": "phone",
+          "added": 1,
+          "seen": 120,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000019",
+          "name": "D19",
+          "kind": "phone",
+          "added": 1,
+          "seen": 119,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000018",
+          "name": "D18",
+          "kind": "phone",
+          "added": 1,
+          "seen": 118,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000017",
+          "name": "D17",
+          "kind": "phone",
+          "added": 1,
+          "seen": 117,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000016",
+          "name": "D16",
+          "kind": "phone",
+          "added": 1,
+          "seen": 116,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000015",
+          "name": "D15",
+          "kind": "phone",
+          "added": 1,
+          "seen": 115,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000014",
+          "name": "D14",
+          "kind": "phone",
+          "added": 1,
+          "seen": 114,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000013",
+          "name": "D13",
+          "kind": "phone",
+          "added": 1,
+          "seen": 113,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000012",
+          "name": "D12",
+          "kind": "phone",
+          "added": 1,
+          "seen": 112,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000011",
+          "name": "D11",
+          "kind": "phone",
+          "added": 1,
+          "seen": 111,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000010",
+          "name": "D10",
+          "kind": "phone",
+          "added": 1,
+          "seen": 110,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000009",
+          "name": "D9",
+          "kind": "phone",
+          "added": 1,
+          "seen": 109,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000008",
+          "name": "D8",
+          "kind": "phone",
+          "added": 1,
+          "seen": 108,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000007",
+          "name": "D7",
+          "kind": "phone",
+          "added": 1,
+          "seen": 107,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000006",
+          "name": "D6",
+          "kind": "phone",
+          "added": 1,
+          "seen": 106,
+          "agent": "x"
+        },
+        {
+          "id": "bbbbbbbb-0000-0000-0000-000000000005",
+          "name": "D5",
+          "kind": "phone",
+          "added": 1,
+          "seen": 105,
+          "agent": "x"
+        }
+      ],
+      "revokedDevices": []
+    },
+    "same": false,
+    "sameMerged": false
+  }
+]

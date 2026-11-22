@@ -1,0 +1,172 @@
+[
+  {
+    "name": "higher rev, same vault, locked, sync on",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": false,
+    "source": "cloud",
+    "prefSync": true,
+    "revokedLocally": false,
+    "expect": "adopt"
+  },
+  {
+    "name": "higher rev, locked, sync off, cloud",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": false,
+    "source": "cloud",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "ignore"
+  },
+  {
+    "name": "higher rev, locked, peer",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": false,
+    "source": "peer",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "adopt"
+  },
+  {
+    "name": "lower rev",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 18
+    },
+    "unlocked": false,
+    "source": "peer",
+    "prefSync": true,
+    "revokedLocally": false,
+    "expect": "ignore"
+  },
+  {
+    "name": "same rev",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "unlocked": true,
+    "source": "peer",
+    "prefSync": true,
+    "revokedLocally": false,
+    "expect": "merge-roster"
+  },
+  {
+    "name": "another vault",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "ffffffffffffffffffffffff",
+      "rev": 29
+    },
+    "unlocked": true,
+    "source": "peer",
+    "prefSync": true,
+    "revokedLocally": false,
+    "expect": "ignore"
+  },
+  {
+    "name": "no local vault, cloud",
+    "local": null,
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": false,
+    "source": "cloud",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "adopt"
+  },
+  {
+    "name": "no local vault, peer",
+    "local": null,
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": false,
+    "source": "peer",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "ignore"
+  },
+  {
+    "name": "revoked here",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": true,
+    "source": "cloud",
+    "prefSync": true,
+    "revokedLocally": true,
+    "expect": "ignore"
+  },
+  {
+    "name": "unlocked, higher rev, sync off, cloud",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": true,
+    "source": "cloud",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "merge-roster"
+  },
+  {
+    "name": "unlocked, higher rev, peer",
+    "local": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 19
+    },
+    "remote": {
+      "id": "e8ef3e6ebb908fed32a7de9b",
+      "rev": 22
+    },
+    "unlocked": true,
+    "source": "peer",
+    "prefSync": false,
+    "revokedLocally": false,
+    "expect": "adopt"
+  }
+]

@@ -1,0 +1,208 @@
+{
+  "cases": [
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-1"
+      },
+      "unixMs": 59000,
+      "code": "94287082"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-1"
+      },
+      "unixMs": 1111111109000,
+      "code": "07081804"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-1"
+      },
+      "unixMs": 1234567890000,
+      "code": "89005924"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-1"
+      },
+      "unixMs": 2000000000000,
+      "code": "69279037"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-256"
+      },
+      "unixMs": 59000,
+      "code": "46119246"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-256"
+      },
+      "unixMs": 1111111109000,
+      "code": "68084774"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-256"
+      },
+      "unixMs": 1234567890000,
+      "code": "91819424"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-256"
+      },
+      "unixMs": 2000000000000,
+      "code": "90698825"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-512"
+      },
+      "unixMs": 59000,
+      "code": "90693936"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-512"
+      },
+      "unixMs": 1111111109000,
+      "code": "25091201"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-512"
+      },
+      "unixMs": 1234567890000,
+      "code": "93441116"
+    },
+    {
+      "cfg": {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA",
+        "digits": 8,
+        "period": 30,
+        "algorithm": "SHA-512"
+      },
+      "unixMs": 2000000000000,
+      "code": "38618901"
+    },
+    {
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP"
+      },
+      "unixMs": 0,
+      "code": "282760"
+    },
+    {
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP"
+      },
+      "unixMs": 29000,
+      "code": "282760"
+    },
+    {
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP"
+      },
+      "unixMs": 30000,
+      "code": "996554"
+    },
+    {
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP"
+      },
+      "unixMs": 1700000000000,
+      "code": "324550"
+    }
+  ],
+  "uris": [
+    {
+      "uri": "otpauth://totp/Ex:alice@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Ex&algorithm=SHA256&digits=8&period=60",
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "algorithm": "SHA-256",
+        "digits": 8,
+        "period": 60
+      }
+    },
+    {
+      "uri": "jbsw y3dp-ehpk 3pxp",
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP"
+      }
+    },
+    {
+      "uri": "otpauth://totp/PEVV%3Abob%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=PEVV&algorithm=SHA512&digits=8&period=45",
+      "cfg": {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "digits": 8,
+        "period": 45,
+        "algorithm": "SHA-512"
+      }
+    }
+  ],
+  "limiter": [
+    {
+      "fails": 0,
+      "delay": 0
+    },
+    {
+      "fails": 4,
+      "delay": 0
+    },
+    {
+      "fails": 5,
+      "delay": 30000
+    },
+    {
+      "fails": 6,
+      "delay": 60000
+    },
+    {
+      "fails": 7,
+      "delay": 120000
+    },
+    {
+      "fails": 12,
+      "delay": 3600000
+    },
+    {
+      "fails": 30,
+      "delay": 3600000
+    }
+  ]
+}

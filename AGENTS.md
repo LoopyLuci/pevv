@@ -18,9 +18,12 @@ npm run desktop:build          # web bundle + Tauri installers (slow)
 npm run test:e2e               # Playwright web e2e (needs `npm run build` and a Chromium)
 npm run test:e2e:extension     # Playwright extension e2e (needs `npm run build:extension`)
 cd desktop/src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+node scripts/android-vectors.mjs   # regenerate the TypeScript -> Kotlin golden vectors (android/app/src/test/resources/vectors/)
+cd android && ./gradlew test lint assembleDebug assembleRelease   # Android app (JDK 17, Android SDK; release APK is unsigned)
 ```
 
-Run lint + typecheck + `npm test` before finishing any TypeScript change; run the cargo trio for any Rust change.
+Run lint + typecheck + `npm test` before finishing any TypeScript change; run the cargo trio for any Rust change; run the Gradle line for any change under `android/`
+(and `node scripts/android-vectors.mjs` first if you touched crypto, vault, qr, devices, passkey or import code, so the Kotlin port is checked against it).
 
 ## Architecture map
 
@@ -36,6 +39,7 @@ src/pevv/ui/                       React views         src/pevv/i18n.ts  EN + ES
 src/pevv/extension/                MV3 worker, content script, popup, vault bridge, desktop link, protocol
 src/pevv/desktop/                  webview glue for the Tauri shell (IPC bridge, browser link, auto-type, CLI, passkey provider)
 desktop/src-tauri/                 Rust: app, `pevv` CLI, `pevv-native-host`
+android/                           native Kotlin/Compose app (docs/ANDROID.md): core/ is the Kotlin port of src/pevv, checked by golden vectors
 extension/manifest.json            MV3 manifest        scripts/  build-extension.mjs, extension-package.mjs, desktop-build.mjs
 supabase/migrations/               optional sync backend (ciphertext only)       public/_headers  web CSP/headers
 ```
@@ -81,6 +85,7 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first for anything non-trivial
 | Site matching | `tests/unit/pevv.sitematch.test.ts` |
 | Extension worker, core, packaging | `tests/unit/pevv.extension.core.test.ts`, `pevv.extension.test.ts` |
 | Desktop webview glue, link, CLI, auto-type, passkeys | `tests/unit/pevv.desktop.test.ts`, `pevv.link.test.ts`, `pevv.cli.test.ts`, `pevv.autotype.test.ts`, `pevv.native.test.ts`, `pevv.passkeyProvider.test.ts` |
+| Android (Kotlin core, golden vectors from TypeScript, autofill matching) | `android/app/src/test/java/dev/pevv/app/*Test.kt`; `tests/unit/pevv.android.test.ts` opens a Kotlin-made vault with the TypeScript code |
 | Rust shell | `#[cfg(test)]` modules in `desktop/src-tauri/src/*.rs` (`cargo test`) |
 | Web e2e (real browser, virtual authenticator) | `tests/e2e/pevv.spec.ts` |
 | Extension e2e | `tests/e2e-extension/*.spec.ts`, `tests/e2e-extension/firefox/` |

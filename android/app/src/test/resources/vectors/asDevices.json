@@ -1,0 +1,40 @@
+{
+  "input": [
+    {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": " \u0001Name\u0002 ",
+      "kind": "watch",
+      "added": 1,
+      "seen": 2,
+      "agent": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    },
+    {
+      "id": "zz",
+      "name": "bad"
+    },
+    {
+      "id": "aaaaaaaa-0000-0000-0000-000000000002",
+      "name": ""
+    },
+    5,
+    null
+  ],
+  "expected": [
+    {
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "name": "Name",
+      "kind": "unknown",
+      "added": 1,
+      "seen": 2,
+      "agent": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    },
+    {
+      "id": "aaaaaaaa-0000-0000-0000-000000000002",
+      "name": "Device",
+      "kind": "unknown",
+      "added": 0,
+      "seen": 0,
+      "agent": ""
+    }
+  ]
+}

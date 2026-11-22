@@ -10,6 +10,7 @@ Releases are cut from tags named `v<version>` (for example `v0.3.0`). The `relea
 | `PEVV_<version>_x64-setup.exe` (NSIS), `PEVV_<version>_x64_en-US.msi` | Windows | **Unsigned.** SmartScreen warns on first run. |
 | `PEVV_<version>_amd64.AppImage`, `pevv_<version>_amd64.deb` | Ubuntu | **Unsigned.** |
 | `dist.zip` | Ubuntu | The static web app, built **without** sync configured. Self-hosters should build their own. |
+| `pevv-android-<tag>-unsigned.apk` | Ubuntu | **Unsigned** Android app; sign it yourself before installing ([CLIENT_ANDROID.md](CLIENT_ANDROID.md)). Built without sync configured. |
 | `SHA256SUMS` | Ubuntu | Checksums of everything above. |
 
 Nothing in the workflow signs binaries, and no signing keys exist in this repository. If you add signing, put the certificate in

@@ -1,0 +1,277 @@
+package dev.pevv.app.ui
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.util.Size
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.BarcodeFormat
+import dev.pevv.app.R
+import dev.pevv.app.core.GenOpts
+import dev.pevv.app.core.Generator
+import dev.pevv.app.core.Json
+import dev.pevv.app.core.PhraseOpts
+import dev.pevv.app.core.Transfer
+import dev.pevv.app.pevv
+import dev.pevv.app.sync.SyncConfig
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
+
+@Composable
+fun GeneratorPanel(onUse: ((String) -> Unit)? = null) {
+    val ctx = LocalContext.current
+    var phrase by remember { mutableStateOf(false) }
+    var opts by remember { mutableStateOf(GenOpts()) }
+    var popts by remember { mutableStateOf(PhraseOpts()) }
+    val words = remember { ctx.assets.open("eff_short_wordlist.txt").bufferedReader().readLines().filter { it.isNotBlank() } }
+    var out by remember { mutableStateOf("") }
+    fun regen() { out = if (phrase) Generator.generatePassphrase(popts, words) else Generator.generatePassword(opts) }
+    LaunchedEffect(phrase, opts, popts) { regen() }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(phrase, { phrase = it })
+            Text(stringResource(R.string.passphrase_mode), Modifier.padding(start = 8.dp))
+        }
+        Text(out, style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth().semantics { contentDescription = ctx.getString(R.string.generated_desc, out.length) })
+        val bits = if (phrase) Generator.phraseEntropyBits(popts, words.size) else Generator.entropyBits(opts)
+        Text(stringResource(R.string.strength_bits, bits), style = MaterialTheme.typography.bodySmall)
+        if (!phrase) {
+            Text(stringResource(R.string.length_n, opts.length))
+            Slider(opts.length.toFloat(), { opts = opts.copy(length = it.toInt()) }, valueRange = 8f..64f)
+            ToggleRow(stringResource(R.string.lowercase), opts.lower) { opts = opts.copy(lower = it) }
+            ToggleRow(stringResource(R.string.uppercase), opts.upper) { opts = opts.copy(upper = it) }
+            ToggleRow(stringResource(R.string.digits), opts.digits) { opts = opts.copy(digits = it) }
+            ToggleRow(stringResource(R.string.symbols), opts.symbols) { opts = opts.copy(symbols = it) }
+            ToggleRow(stringResource(R.string.avoid_ambiguous), opts.avoidAmbiguous) { opts = opts.copy(avoidAmbiguous = it) }
+        } else {
+            Text(stringResource(R.string.words_n, popts.words))
+            Slider(popts.words.toFloat(), { popts = popts.copy(words = it.toInt()) }, valueRange = 4f..12f)
+            ToggleRow(stringResource(R.string.capitalize), popts.capitalize) { popts = popts.copy(capitalize = it) }
+            ToggleRow(stringResource(R.string.add_number), popts.number) { popts = popts.copy(number = it) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = { regen() }) { Text(stringResource(R.string.regenerate)) }
+            TextButton(onClick = { copySecret(ctx, "password", out) }) { Text(stringResource(R.string.copy)) }
+            if (onUse != null) TextButton(onClick = { onUse(out) }) { Text(stringResource(R.string.use)) }
+        }
+    }
+}
+
+@Composable
+private fun ToggleRow(label: String, on: Boolean, set: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text(label, Modifier.weight(1f))
+        Switch(on, set)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GeneratorScreen(onBack: () -> Unit) {
+    Scaffold(topBar = { BackBar(stringResource(R.string.generator), onBack) }) { pad -> Page(Modifier.padding(pad)) { GeneratorPanel() } }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BackBar(title: String, onBack: () -> Unit) {
+    TopAppBar(title = { Text(title) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) } })
+}
+
+/* ───────────────────────── scan ───────────────────────── */
+
+/** Camera preview that reports every QR code text it decodes (CameraX + ZXing; nothing leaves the phone). */
+@Composable
+fun QrCamera(onText: (String) -> Unit, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
+    LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
+    if (!granted) {
+        Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.camera_needed))
+            PrimaryButton(stringResource(R.string.allow_camera), { ask.launch(Manifest.permission.CAMERA) })
+        }
+        return
+    }
+    val executor = remember { Executors.newSingleThreadExecutor() }
+    val reader = remember { MultiFormatReader().also { it.setHints(mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE), DecodeHintType.TRY_HARDER to true)) } }
+    var last by remember { mutableStateOf("" to 0L) }
+    val view = remember { PreviewView(ctx) }
+    DisposableEffect(owner) {
+        val future = ProcessCameraProvider.getInstance(ctx)
+        var provider: ProcessCameraProvider? = null
+        future.addListener({
+            val p = future.get()
+            provider = p
+            val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
+            val analysis = ImageAnalysis.Builder().setTargetResolution(Size(1280, 720)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+            analysis.setAnalyzer(executor) { img: ImageProxy ->
+                try {
+                    val plane = img.planes[0]
+                    val buf = plane.buffer
+                    val data = ByteArray(buf.remaining()).also { buf.get(it) }
+                    val src = PlanarYUVLuminanceSource(data, plane.rowStride, img.height, 0, 0, img.width, img.height, false)
+                    val res = reader.decodeWithState(BinaryBitmap(HybridBinarizer(src)))
+                    val now = System.currentTimeMillis()
+                    if (res.text != last.first || now - last.second > 1500) {
+                        last = res.text to now
+                        view.post { onText(res.text) }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    reader.reset()
+                    img.close()
+                }
+            }
+            try {
+                p.unbindAll()
+                p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+            } catch (_: Exception) {
+            }
+        }, ContextCompat.getMainExecutor(ctx))
+        onDispose { provider?.unbindAll(); executor.shutdown() }
+    }
+    AndroidView({ view }, modifier.semantics { contentDescription = ctx.getString(R.string.camera_desc) })
+}
+
+/** Scan a vault QR (offline codes or a live transfer code) and install the vault on this phone. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScanScreen(onBack: () -> Unit) {
+    val app = LocalContext.current.pevv
+    val frames = remember { mutableListOf<String>() }
+    var progress by remember { mutableStateOf<String?>(null) }
+    val op = rememberOp()
+    val run = op.runner()
+    var confirm by remember { mutableStateOf<Transfer.ScanHit?>(null) }
+    fun handle(hit: Transfer.ScanHit) = run {
+        val r = installFromScan(app, hit, frames)
+        progress = when {
+            r.startsWith("progress:") -> r.removePrefix("progress:")
+            r == "waiting" -> "waiting"
+            else -> null
+        }
+    }
+    Scaffold(topBar = { BackBar(stringResource(R.string.scan_vault), onBack) }) { pad ->
+        Column(Modifier.padding(pad).fillMaxSize()) {
+            QrCamera({ text ->
+                val hit = Transfer.parseScan(text)
+                if (hit != null && !op.busy) {
+                    if (app.vault.file != null && confirm == null && frames.isEmpty() && progress == null) confirm = hit else handle(hit)
+                }
+            }, Modifier.fillMaxWidth().height(320.dp))
+            Page {
+                Text(stringResource(R.string.scan_body))
+                if (!SyncConfig.configured) Text(stringResource(R.string.scan_offline_only), style = MaterialTheme.typography.bodySmall)
+                progress?.let { Text(if (it == "waiting") stringResource(R.string.waiting_sender) else stringResource(R.string.frames_read, it)) }
+                if (op.busy) Busy(stringResource(R.string.working))
+                op.error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
+            }
+        }
+    }
+    confirm?.let { hit ->
+        ConfirmDialog(stringResource(R.string.replace_vault_title), stringResource(R.string.replace_vault_body), stringResource(R.string.replace), { confirm = null; handle(hit) }, { confirm = null }, danger = true)
+    }
+}
+
+/* ───────────────────────── show ───────────────────────── */
+
+/** Show this vault as a QR for another phone: a live code (needs sync config) or offline codes that cycle. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShareVaultScreen(onBack: () -> Unit) {
+    val app = LocalContext.current.pevv
+    val file = app.vault.file
+    var live by remember { mutableStateOf(SyncConfig.configured) }
+    var index by remember { mutableStateOf(0) }
+    var liveCode by remember { mutableStateOf<String?>(null) }
+    val op = rememberOp()
+    val offline = remember(file?.rev) { try { file?.let { Transfer.packVault(it) } } catch (_: Exception) { null } }
+    DisposableEffect(live, file?.rev) {
+        val token = Transfer.newTransferToken()
+        var job: kotlinx.coroutines.Job? = null
+        if (live && file != null) {
+            job = app.scope.launch {
+                try {
+                             val h = Transfer.sealHandoff(file.toText())
+                             app.relay.putTransfer(token, Json.encode(h.envelope))
+                             liveCode = Transfer.shareUrl("H.${h.key}.$token", SyncConfig.publicUrl)
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                } catch (_: Exception) {
+                }
+            }
+        }
+        onDispose { job?.cancel(); app.relay.dropTransfer(token); liveCode = null }
+    }
+    LaunchedEffect(offline, live) { while (!live && (offline?.size ?: 0) > 1) { delay(1500); index = (index + 1) % offline!!.size } }
+    Scaffold(topBar = { BackBar(stringResource(R.string.show_vault_qr), onBack) }) { pad ->
+        Page(Modifier.padding(pad)) {
+            InfoCard(stringResource(R.string.qr_no_password))
+            if (SyncConfig.configured) Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(live, { live = it }); Text(stringResource(R.string.live_transfer), Modifier.padding(start = 8.dp))
+            }
+            if (live) {
+                val code = liveCode
+                if (code != null) {
+                    QrImage(code, stringResource(R.string.qr_live_desc), 640)
+                    Text(stringResource(R.string.qr_live_body))
+                } else Busy(stringResource(R.string.working))
+            } else if (offline != null) {
+                QrImage(offline[index], stringResource(R.string.qr_offline_desc, index + 1, offline.size), 640)
+                Text(stringResource(R.string.qr_offline_body, index + 1, offline.size))
+            } else InfoCard(stringResource(R.string.err_qr_too_big), warn = true)
+            op.error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
+        }
+    }
+}
+

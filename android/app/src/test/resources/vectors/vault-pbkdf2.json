@@ -1,0 +1,295 @@
+{
+  "password": "pb kdf ünicode",
+  "file": {
+    "format": "luciverse.pevv",
+    "v": 1,
+    "id": "d11e246f85c013450ae0a41c",
+    "created": 1795378177547,
+    "updated": 1795378177551,
+    "rev": 12,
+    "kdf": {
+      "alg": "pbkdf2-sha256",
+      "iter": 600000,
+      "salt": "KTA3PkVMU1phaG92fYSLkg=="
+    },
+    "slots": [
+      {
+        "id": "78b65a533086d24170ba1229",
+        "type": "password",
+        "wrapped": {
+          "iv": "ZevnsiZSOPQMBOyc",
+          "ct": "zL1hGzXOGG86vbFo/37LnG8tFd1JV1/OSeBgXxaMidXv9UAeIrP3Vl2PkohDAQ4X"
+        }
+      }
+    ],
+    "passkeys": [],
+    "require": {
+      "totp": false,
+      "passkey": false,
+      "usbKey": false
+    },
+    "totp": null,
+    "meta": {
+      "iv": "7adCPxCTaR29ZGgh",
+      "ct": "TkTxLNtB9pVGHNGy606Qdo2GB+8ytZCx97gMs5mIP63QFCi4fmNSlleDY1XSUY/e6UuyUr2P+/BfiXD+OmiH5C3NnBzFiqSHLcfa7T2Nto7RR6lIe5GXxNmhN/Q0a0l8Dg9uo44N3b2Yg5Bwxi4xh6kf++m5uWBXHhCap51IKcbK0ekdK5izmKPdHgSCtRZkojnJfMgj0bs5IyQ457lhCj4SMzRx14qcWGRNmlZJq7o66Vp2a9OqS3e+EDx/D2CZ/34eN082eLFCw2ONSKIHM17fch0ShxHe6+NMxef1mD560LClqdXsJ+dKTAVQenXvgBQ2/lUqXHBrssaxvN9egwbTwFlEYX71YYVHRe1oK/DtVyrfrFpzO5eP7n+fwAQG7LSh/ag3gqTSjJi7Jox3mNzkyMO8PMEU364nCez7degejp04YecUCOO2L/Vr47UAtGazl2xYkVMkDZPOSFYkqzjpk4hvn6VTRh1zW1LNBB1WYDNQfKpW1L8xrtRQnMiSnZTDge9kNYyhco+EOVoThW6atZ6oMZC0sKtGOq6N9y68mY9sV9aYrpSipd6Mnwa3qd9B8iWLRCKd3/6NaAJeGj3LBfKY0yXIarbItI7upgjqq5vmNUc="
+    },
+    "entries": [
+      {
+        "id": "e24daff48473f7cac9a2b0cb",
+        "ver": 1,
+        "sealed": {
+          "iv": "Zj4oZLkHC/8O2rpr",
+          "ct": "o7J2yR1qNhnPz3Frv2cWcVHhqvkrsWfj5qWNg75qQafFto05jyuYE24vrQ3MoBwgPGleE/mG45MAx1mgNSBcWaZpAqpXhojYZ/QFZ/v1Ub7JM9ML2xmk/TUwSzMLn2FWEnoXMsoHwQwSEARNMZ93MaKpcjtI2Ju3bowyQhvuV0SGxVdH87zLXLAZCark0/5Wlx6r+e1u9TAbpn9tOI1FiX/VUcgYru9pNjeKG3ZuESQ7Fq0tmi2c/TAwpH4kz44+6fYtlP20FpHd6ClosnoqsrpXkRl6kDUQhHpL4SfHph5yPpRNcsAuLwDG8gLs3WSBcU2HYu3jao/NwwgZpueuhNtdIdzAw3dUntGctrNU6XxhGcppN2RM2K0FHNOoYHZJSi5AX3UUDt+F7fd8WaBO8VmYmcFRoZFsLqbwlAJHLP1ih/JN/aK85pjNN/wp/XxaviQHLD6Fd6mNPK5iR0wWg7FeMJdrEjCk34u26kpGr+0bJVTHTxF3THCA8KQa2UknqsowzmV6Zvp6ioh74bNUj39Olq5d"
+        }
+      },
+      {
+        "id": "27c9cd362329523695c61ac9",
+        "ver": 2,
+        "sealed": {
+          "iv": "54VDcg8SqaZV5/zF",
+          "ct": "I2vxvq1aBnuVNlPUyFvNT2A9HbepU4Wvb6vYhT4muD6D7pHXzSd+NOprZ1Kc0nwAcvFyhV2gwKAw7ryILCYebbgD2izSWKtPjaBDM2uILXopiO6cxDwUc7KLRovye+p+meVGRKjEcnKdczQeifcjiyVJs3XsUTA6PDCBWx1SZzBNSs3+rNXFvP9+WIbSi/3j5XwiWQ4S/3rti9pEfT7LhhV73Qrm+GfQfCbvxItWrTXjrEKBeoB9vmh95g=="
+        }
+      },
+      {
+        "id": "10348df8c81dfa5c44bd497e",
+        "ver": 1,
+        "sealed": {
+          "iv": "r0HlciV2Iwdek9cR",
+          "ct": "aMV0oUYRyCdNMj/KTe8tNl+SADYHhK0e4tS5ROL/ADOw13bx/DkFGakWtozZpeeJhjXqzJW7sGPI9DCsC5NDDFs+0oWFi6lvipM95iLrm7eCwkkzha83A5g9wZz+Do2KgkMW9d8/A3kTk/w87EI3QXu3ZuP6zdSM73CJUwdBLNYku7cY0KqU/8TxZBTB+rKAKbxjeRp60z1KolMwDW9HfF5fjmpFFZAfs2KAELQ="
+        }
+      },
+      {
+        "id": "0b4e2ff9597f2414db90c1e3",
+        "ver": 1,
+        "sealed": {
+          "iv": "4dnzW6MQfUMHfcXU",
+          "ct": "4FHI0bDEgYBfwI+w7qzwLLwcfcub/m2Y7Wyl7fEhYbpqqC5NNa3pZn2YTAXgl+vKcUnkU1ClJ7Zj3i/CF2hljS0b5WEtVaBHWLfrQLzAbvG1kPEeToU5M4Vsf2uJw7TQPMucttSgkWYcxcq1WpZ14H2SPjOACCaf41YWYXdz05OqHN4EqAnZOqha9pKeKzy9cD2zyFdpVvYaZF1lKJH7/eBclwllgf8peqeC0gsThHFi"
+        }
+      },
+      {
+        "id": "ad9d4e4377e0ac3156773c29",
+        "ver": 1,
+        "sealed": {
+          "iv": "7c7cErP1Wawup2ZX",
+          "ct": "/XORB54M9A4vpiUsYeC/f7Xo6PtFQKG4XPlg3iCftMpfSuoAZ5/7sTXjEPhaUgeRIjN6SQqB+FjREmVlful6oeSR0TmKVbirz9Jx+jXkRuK4sZM/qG+ObGpx3wS4IQVvwkkdREqt8Ta1Bw2qdWLQb3WV4u/iN0KG+6ZXQ4rFBaEWD8GzE4chQ8BBcapIaGnx14qEaNn4axfDsDFOwoQSS4iCQgYdL+uJAdgSGBU52afCv7Y3eeDlqrv0jKf/Jb5aYXoJ1N0JcAY5qvlUJTE2twa/wHeCRV9HCQNpzBZu9AJGYWhk"
+        }
+      },
+      {
+        "id": "8f2baab97b41ab70c28870cf",
+        "ver": 1,
+        "sealed": {
+          "iv": "pkFVJljyG6nivjx7",
+          "ct": "vBFfBSnOOhL55Ln/VZxpZESm61dQCG2MQ1ERbvCWh68Eofu+o3LdRC7qlpcdhNJIRBdPRZqU8ZWl+gwsekIjTWCTFfkwSllgb3IYkpVVY6YDqf54MxGrKSzACKeBJuQrRvPKrj2wfCI/cmRfPBolWq6ceNIWgcar3BGwFMwJjXg5taF23JA6HnDJSx4MOz/uqtZd0354uFoOr+4KB657E2K7hvRsZp2T2N/KQdxx8UGQ8LPT+kSiI4JhPA7T7uDI8poRr/khBNNigbBS3NrKFfsraxMgE95e47tfjKnViIlRko7fKARJJ9/bCPcBgnt8A34A4baNZJfm/Wf6YgNPdtDN/lZMBpqjfVJd00+BD6CCsnfYfHCjma+4P8QyuCetyQ=="
+        }
+      },
+      {
+        "id": "aba181c287eab903c870e534",
+        "ver": 1,
+        "sealed": {
+          "iv": "Rn/HytAiEN8VgSpr",
+          "ct": "Up/hErDSbZ9xs5WiOawFtcIH14L/VUH6blxS1an/2HhfTpklcnBx9Fs4CBMfgkgfHnKQcGHA7UNX5F5xE+tF/7lhyT361zyywA7TCg/LuayR9H4OqC0Gs2VuxH6N5xUzqEmZ9VkqUHH7IptqDoFI7ARFGMZdNBAnNedKEMCeM0xIFNqItz8OIMnO54sbROLRhqonVgsLV+sEgLs3/Zbt3Q1QgpSq5qCmpD6cBRqO51xnxqUgPz5i0uXwQXOfn9O427xnc/Xu8dS2Ik612t+m+kIH4JeNsP4+Kcw2BZNCkpW9tti3Xw=="
+        }
+      },
+      {
+        "id": "69617526a17748c9482a2543",
+        "ver": 1,
+        "sealed": {
+          "iv": "3AjSyXOTXuI57ojb",
+          "ct": "trs3Xv86shSmkE77wIe3YO+j4SOuRRs2dex2w2WKEiaoam1OliCR1Pb0z2Fo/0h4ga6LMerTRWMNxkXVhNL5Z06t7PrA/btqYwHZ65pi/Q1gPpgDyFW6wxry/TRDAgp3rzZfGDVAjh9N7mCVO6bZm9SAzMt98z6iuOi8v7X1Gmlru1z+ApfG2o4hy3XHdVmh68xkWCdAqmxnfWqTTqZjcd4aNW/FXt371mLSUicjEwYm3AdHaxHyQDcnrYOkw3T0EDs3iFbZ7jDVu5D/sXavECfiK9DbPtjf6T4ry8piAQxXdeP9kZQyjrkk8XtrXhgxIadzWV5OPo3JohrbVMgvgVWVCzVUP/zYvvjz0IbmSDXX1fnRdwM+gTRfZfYA1/Td8nhaVZxntNXtr6jp97Bx6LWiG//b4eDNdbfvrFgkUj4+J+UXiaKVRM2Tn/OWt+eqJNza1hzJLuObwn+BE6tAvEEIU/QWticzGulMzGzZKhGGIvGhenm3+zNbjmZ/wUC+yGQxJyzhd+qvMl4ilACFIbjOqHJI4Sba5fdwsxii8nbgHg5UCcOXAZniexbQWjAB7y2CgCuzwK7el+PnDJglmHIXImPDJHkB1F0UmE5tfSnbV50SW8zNkQEe4+av6e4CEKUep82+G5gbr9nyTMMfn9/7gMsNyN9bE8yFxMhrhlogNiVpFwLd5yvygK59vVjhuPIMFnxeBtNesN6svbtkc/xzfJf3IAnwmcHjwyKYI8vl9Cc6KGNyShcQ+MGZdj089hVCkJ1GaGuQ/spD7Z335AlZq5QMZx19rtN9WBbQODO1NecNWqOA+PwHv2prCcRCWmFjDjVgjG+1wAvjPRitrJ2S7kc7HYqW3WwEPg=="
+        }
+      }
+    ]
+  },
+  "vaultKeyHex": "3c99a448b1a1889823ab1265bba9d04fa8469cfe005f1d594de9914763df4a1e",
+  "extras": {},
+  "expected": {
+    "entries": [
+      {
+        "id": "e24daff48473f7cac9a2b0cb",
+        "ver": 1,
+        "data": {
+          "type": "login",
+          "title": "Example",
+          "tags": [
+            "work"
+          ],
+          "favorite": true,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://example.com",
+          "username": "alice@example.com",
+          "password": "p@ss wörd ✓",
+          "totp": "JBSWY3DPEHPK3PXP",
+          "notes": "line1\nline2",
+          "folder": "Work",
+          "futureField": {
+            "nested": [
+              1,
+              2,
+              {
+                "a": "b"
+              }
+            ],
+            "flag": true
+          },
+          "autoType": {
+            "windows": [
+              "PuTTY*"
+            ],
+            "process": "putty.exe"
+          }
+        }
+      },
+      {
+        "id": "27c9cd362329523695c61ac9",
+        "ver": 2,
+        "data": {
+          "type": "env",
+          "title": "DB_URL",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "name": "DB_URL",
+          "value": "edited-value",
+          "env": "prod"
+        }
+      },
+      {
+        "id": "10348df8c81dfa5c44bd497e",
+        "ver": 1,
+        "data": {
+          "type": "note",
+          "title": "Secret note",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "notes": "multi\nline 😀 note"
+        }
+      },
+      {
+        "id": "0b4e2ff9597f2414db90c1e3",
+        "ver": 1,
+        "data": {
+          "type": "apikey",
+          "title": "Stripe",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "service": "stripe",
+          "key": "sk_test_123"
+        }
+      },
+      {
+        "id": "ad9d4e4377e0ac3156773c29",
+        "ver": 1,
+        "data": {
+          "type": "card",
+          "title": "Visa",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "cardholder": "A Person",
+          "number": "4111111111111111",
+          "expiry": "12/30",
+          "cvv": "123",
+          "pin": "0000"
+        }
+      },
+      {
+        "id": "8f2baab97b41ab70c28870cf",
+        "ver": 1,
+        "data": {
+          "type": "ssh",
+          "title": "Server",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n-----END OPENSSH PRIVATE KEY-----",
+          "publicKey": "ssh-ed25519 AAAAC3Nza me@host",
+          "passphrase": "pp"
+        }
+      },
+      {
+        "id": "aba181c287eab903c870e534",
+        "ver": 1,
+        "data": {
+          "type": "identity",
+          "title": "Me",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "fullName": "A Person",
+          "email": "a@example.com",
+          "phone": "+1 555 0100",
+          "address": "1 Road\nTown"
+        }
+      },
+      {
+        "id": "69617526a17748c9482a2543",
+        "ver": 1,
+        "data": {
+          "type": "passkey",
+          "title": "example.org (passkey)",
+          "tags": [],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "rpId": "example.org",
+          "rpName": "Example",
+          "credentialId": "8SK4XahZ9WfkeqtrJnfzK4I4kGCLHQXKGjj0a-vLue8",
+          "userHandle": "AQIDBA",
+          "userName": "alice",
+          "userDisplayName": "Alice",
+          "passkeyPrivateKey": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgWZr7-tmx2MF3LLUFTHd3nYyatJwx29Qna1ZQp0ejQ6-hRANCAAQrUoanb2UOvKPaKxUbXbYPQt9nPf_oHKFu4avzEnGUkGIf88BJO2AsizUkJrio5EJ660Xi0Ra_UQVDJRuOu1R0",
+          "passkeyPublicKey": "BCtShqdvZQ68o9orFRtdtg9C32c9_-gcoW7hq_MScZSQYh_zwEk7YCyLNSQmuKjkQnrrReLRFr9RBUMlG467VHQ",
+          "signCount": 0
+        }
+      }
+    ],
+    "meta": {
+      "environments": [
+        "dev",
+        "prod"
+      ],
+      "activeEnv": "dev",
+      "grants": {},
+      "index": {
+        "e24daff48473f7cac9a2b0cb": 1,
+        "27c9cd362329523695c61ac9": 2,
+        "10348df8c81dfa5c44bd497e": 1,
+        "0b4e2ff9597f2414db90c1e3": 1,
+        "ad9d4e4377e0ac3156773c29": 1,
+        "8f2baab97b41ab70c28870cf": 1,
+        "aba181c287eab903c870e534": 1,
+        "69617526a17748c9482a2543": 1
+      },
+      "require": {
+        "totp": false,
+        "passkey": false,
+        "usbKey": false
+      },
+      "usbKeys": [],
+      "totpLastStep": null,
+      "folders": [],
+      "projectEnv": {},
+      "devices": [],
+      "revokedDevices": []
+    },
+    "totp": null,
+    "warnings": []
+  }
+}

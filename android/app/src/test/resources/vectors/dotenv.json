@@ -1,0 +1,30 @@
+{
+  "text": "# c\nexport A=1\nB=\"two words\"\nC='single'\nD=plain # trailing\nBAD LINE\n1X=no\nE=\"multi\nline\"\nF=\"esc\\n\\\"q\\\"\"\n",
+  "parsed": [
+    {
+      "name": "A",
+      "value": "1"
+    },
+    {
+      "name": "B",
+      "value": "two words"
+    },
+    {
+      "name": "C",
+      "value": "single"
+    },
+    {
+      "name": "D",
+      "value": "plain"
+    },
+    {
+      "name": "E",
+      "value": "multi\nline"
+    },
+    {
+      "name": "F",
+      "value": "esc\n\"q\""
+    }
+  ],
+  "serialized": "A=plain/ok\nB=\"with space\"\nC=\"q\\\"uote\\nnl\\\\bs\"\n"
+}

@@ -28,16 +28,16 @@
 
 | | Web app | Browser extension | Desktop app | Android |
 |---|:--:|:--:|:--:|:--:|
-| Vault, items, generator, health, import/export | yes | yes (vault screen) | yes | not yet ([future work](docs/CLIENT_ANDROID.md)) |
-| Fill and save logins on websites | no | **yes** (exact-origin only) | via the extension link | |
-| Passkey / security-key unlock | yes | no (use the desktop link) | yes (native) | |
+| Vault, items, generator, health, import/export | yes | yes (vault screen) | yes | yes (native app) |
+| Fill and save logins on websites | no | **yes** (exact-origin only) | via the extension link | autofill service (exact host; apps by asset links or your choice) |
+| Passkey / security-key unlock | yes | no (use the desktop link) | yes (native) | PRF passkey unlock where the passkey provider supports it |
 | Auto-type into other programs | no | no | **yes** (global shortcut) | |
 | `pevv run` command line | no | no | **yes** | |
-| Windows 11 passkey provider | no | no | experimental, off by default | |
-| Auto-lock, clipboard clear | yes | yes | yes, plus OS lock/suspend | |
-| Where the vault file lives | `localStorage` | `chrome.storage.local` | file in the app-data folder | |
+| Passkey provider for other apps and sites | no | no | experimental Windows 11 provider, off by default | Credential Manager provider (Android 14+) |
+| Auto-lock, clipboard clear | yes | yes | yes, plus OS lock/suspend | yes, plus biometric unlock (Keystore) |
+| Where the vault file lives | `localStorage` | `chrome.storage.local` | file in the app-data folder | private app storage, no system backup |
 
-Docs: [web](docs/CLIENT_WEB.md), [extension](docs/CLIENT_EXTENSION.md), [desktop](docs/CLIENT_DESKTOP.md).
+Docs: [web](docs/CLIENT_WEB.md), [extension](docs/CLIENT_EXTENSION.md), [desktop](docs/CLIENT_DESKTOP.md), [Android](docs/CLIENT_ANDROID.md) ([design](docs/ANDROID.md); the release APK is unsigned and not yet tested on real devices).
 
 ## Security model in one page
 

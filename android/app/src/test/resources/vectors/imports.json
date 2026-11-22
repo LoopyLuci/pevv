@@ -1,0 +1,215 @@
+[
+  {
+    "name": "chrome",
+    "text": "name,url,username,password,note\nExample,https://example.com,alice,pw1,hello\nNo pass,https://x.test,bob,,\n",
+    "result": {
+      "source": "chrome",
+      "entries": [
+        {
+          "type": "login",
+          "title": "Example",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://example.com",
+          "username": "alice",
+          "password": "pw1",
+          "notes": "hello"
+        },
+        {
+          "type": "login",
+          "title": "No pass",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://x.test",
+          "username": "bob"
+        }
+      ],
+      "skipped": 0
+    }
+  },
+  {
+    "name": "bitwarden-csv",
+    "text": "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\nWork,1,login,Git,\"two\nlines\",,0,https://git.test,carol,gpw,JBSWY3DPEHPK3PXP\n,,note,A note,just text,,0,,,,\n",
+    "result": {
+      "source": "bitwarden",
+      "entries": [
+        {
+          "type": "login",
+          "title": "Git",
+          "tags": [
+            "imported"
+          ],
+          "favorite": true,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://git.test",
+          "username": "carol",
+          "password": "gpw",
+          "totp": "JBSWY3DPEHPK3PXP",
+          "notes": "two\nlines",
+          "folder": "Work"
+        },
+        {
+          "type": "note",
+          "title": "A note",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "notes": "just text"
+        }
+      ],
+      "skipped": 0
+    }
+  },
+  {
+    "name": "cards-csv",
+    "text": "name,url,username,password,cardnumber,cvc,expirydate,cardholdername\nCard one,,,,4111 1111 1111 1111,123,1230,Dee\n",
+    "result": {
+      "source": "nordpass",
+      "entries": [
+        {
+          "type": "card",
+          "title": "Card one",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "number": "4111111111111111",
+          "cardholder": "Dee",
+          "cvv": "123",
+          "expiry": "12/30"
+        }
+      ],
+      "skipped": 0
+    }
+  },
+  {
+    "name": "bitwarden-json",
+    "text": "{\"folders\":[{\"id\":\"f1\",\"name\":\"Fam\"}],\"items\":[{\"type\":1,\"name\":\"Mail\",\"notes\":\"n\",\"folderId\":\"f1\",\"login\":{\"uris\":[{\"uri\":\"https://mail.test\"}],\"username\":\"eve\",\"password\":\"epw\",\"totp\":\"JBSWY3DPEHPK3PXP\"}},{\"type\":2,\"name\":\"Pin\",\"notes\":\"secret\"},{\"type\":3,\"name\":\"Amex\",\"card\":{\"cardholderName\":\"E\",\"number\":\"3782 822463 10005\",\"code\":\"1234\",\"expMonth\":\"3\",\"expYear\":\"2031\"}},{\"type\":4,\"name\":\"Identity skipped\"}]}",
+    "result": {
+      "source": "bitwarden",
+      "entries": [
+        {
+          "type": "login",
+          "title": "Mail",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://mail.test",
+          "username": "eve",
+          "password": "epw",
+          "totp": "JBSWY3DPEHPK3PXP",
+          "notes": "n",
+          "folder": "Fam"
+        },
+        {
+          "type": "note",
+          "title": "Pin",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "notes": "secret"
+        },
+        {
+          "type": "card",
+          "title": "Amex",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "cardholder": "E",
+          "number": "378282246310005",
+          "cvv": "1234",
+          "expiry": "03/31"
+        }
+      ],
+      "skipped": 1
+    }
+  },
+  {
+    "name": "proton-json",
+    "text": "{\"vaults\":{\"v1\":{\"name\":\"Personal\",\"items\":[{\"data\":{\"type\":\"login\",\"metadata\":{\"name\":\"Proton login\",\"note\":\"pn\"},\"content\":{\"urls\":[\"https://p.test\",\"https://q.test\"],\"itemUsername\":\"fred\",\"itemEmail\":\"f@p.test\",\"password\":\"ppw\",\"totpUri\":\"otpauth://totp/x?secret=JBSWY3DPEHPK3PXP\"}}},{\"data\":{\"type\":\"note\",\"metadata\":{\"name\":\"Pnote\",\"note\":\"body\"},\"content\":{}}},{\"data\":{\"type\":\"creditCard\",\"metadata\":{\"name\":\"Pcard\",\"note\":\"\"},\"content\":{\"cardholderName\":\"F\",\"number\":\"5555 5555 5555 4444\",\"verificationNumber\":\"999\",\"expirationDate\":\"0829\",\"pin\":\"1\"}}},{\"data\":{\"type\":\"identity\",\"metadata\":{\"name\":\"x\"},\"content\":{}}}]}}}",
+    "result": {
+      "source": "proton",
+      "entries": [
+        {
+          "type": "login",
+          "title": "Proton login",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "site": "https://p.test",
+          "username": "fred",
+          "password": "ppw",
+          "totp": "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP",
+          "notes": "pn\nEmail: f@p.test\nhttps://q.test",
+          "folder": "Personal"
+        },
+        {
+          "type": "note",
+          "title": "Pnote",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "notes": "body",
+          "folder": "Personal"
+        },
+        {
+          "type": "card",
+          "title": "Pcard",
+          "tags": [
+            "imported"
+          ],
+          "favorite": false,
+          "created": 1700000000000,
+          "updated": 1700000000000,
+          "history": [],
+          "cardholder": "F",
+          "number": "5555555555554444",
+          "cvv": "999",
+          "expiry": "08/29",
+          "pin": "1",
+          "folder": "Personal"
+        }
+      ],
+      "skipped": 1
+    }
+  }
+]

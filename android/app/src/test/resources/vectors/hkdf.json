@@ -1,0 +1,20 @@
+[
+  {
+    "ikmHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "salt": "CRAXHiUsMzpBSE9WXWRrcg==",
+    "info": "luciverse/pevv/v1/prf-kek",
+    "okmHex": "39052983f1d3dc02553abbfc5e93ffe2d1349a2aeeb227fc94a4dc9ed7222466"
+  },
+  {
+    "ikmHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "salt": "ChEYHyYtNDtCSVBXXmVscw==",
+    "info": "luciverse/pevv/v1/usb-kek",
+    "okmHex": "9a3a9ea19f64cad23e3f56919b1b7855907fa83bfc19ec825e92562812b8230c"
+  },
+  {
+    "ikmHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "salt": "CxIZICcuNTxDSlFYX2ZtdA==",
+    "info": "luciverse/pevv/v1/recovery-key-kek",
+    "okmHex": "10387e3d8f189e54b4336dbfc217e5e44d03bb1dcc7f5c20644b3fac3a908320"
+  }
+]

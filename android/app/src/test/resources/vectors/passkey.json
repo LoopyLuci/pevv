@@ -1,0 +1,31 @@
+{
+  "aaguid": "661cf2bd-74e1-42fd-93d3-7e2ed09cf977",
+  "item": {
+    "type": "passkey",
+    "title": "example.org (passkey)",
+    "tags": [],
+    "favorite": false,
+    "created": 1700000000000,
+    "updated": 1700000000000,
+    "history": [],
+    "rpId": "example.org",
+    "rpName": "Example",
+    "credentialId": "8SK4XahZ9WfkeqtrJnfzK4I4kGCLHQXKGjj0a-vLue8",
+    "userHandle": "AQIDBA",
+    "userName": "alice",
+    "userDisplayName": "Alice",
+    "passkeyPrivateKey": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgWZr7-tmx2MF3LLUFTHd3nYyatJwx29Qna1ZQp0ejQ6-hRANCAAQrUoanb2UOvKPaKxUbXbYPQt9nPf_oHKFu4avzEnGUkGIf88BJO2AsizUkJrio5EJ660Xi0Ra_UQVDJRuOu1R0",
+    "passkeyPublicKey": "BCtShqdvZQ68o9orFRtdtg9C32c9_-gcoW7hq_MScZSQYh_zwEk7YCyLNSQmuKjkQnrrReLRFr9RBUMlG467VHQ",
+    "signCount": 0
+  },
+  "creationAuthDataHex": "bfabc37432958b063360d3ad6461c9c4735ae7f8edd46592a5e0f01452b2e4b55d00000000661cf2bd74e142fd93d37e2ed09cf9770020f122b85da859f567e47aab6b2677f32b823890608b1d05ca1a38f46bebcbb9efa50102032620012158202b5286a76f650ebca3da2b151b5db60f42df673dffe81ca16ee1abf312719490225820621ff3c0493b602c8b352426b8a8e4427aeb45e2d116bf510543251b8ebb5474",
+  "publicKeyHex": "042b5286a76f650ebca3da2b151b5db60f42df673dffe81ca16ee1abf312719490621ff3c0493b602c8b352426b8a8e4427aeb45e2d116bf510543251b8ebb5474",
+  "cosePublicKeyHex": "a50102032620012158202b5286a76f650ebca3da2b151b5db60f42df673dffe81ca16ee1abf312719490225820621ff3c0493b602c8b352426b8a8e4427aeb45e2d116bf510543251b8ebb5474",
+  "clientDataHashHex": "000306090c0f1215181b1e2124272a2d303336393c3f4245484b4e5154575a5d",
+  "assertion": {
+    "authDataHex": "bfabc37432958b063360d3ad6461c9c4735ae7f8edd46592a5e0f01452b2e4b51d00000001",
+    "signatureHex": "3045022100da25fdbeb5a736a66b18263317c6673f228fd6098e8061581a1ff75169f1e40402204b7584eb7e0a1e21c0fd7769fe111641e30c51bce71c475df0a31d20c76a55ae",
+    "signCount": 1
+  },
+  "rpIdHashHex": "bfabc37432958b063360d3ad6461c9c4735ae7f8edd46592a5e0f01452b2e4b5"
+}
