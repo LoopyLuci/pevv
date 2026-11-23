@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "transport",
+  "description": "Device sync over Transferd, off by default. Settings, pairing and revoke for the main window only; the shell hands over ciphertext and public node ids, never a key, a seed or plaintext.",
+  "windows": ["main"],
+  "permissions": [
+    "allow-transport-status",
+    "allow-transport-enable",
+    "allow-transport-set-addresses",
+    "allow-transport-invite-create",
+    "allow-transport-invite-cancel",
+    "allow-transport-join",
+    "allow-transport-pair-confirm",
+    "allow-transport-peer-approve",
+    "allow-transport-peer-revoke",
+    "allow-transport-sync-now",
+    "allow-transport-take-staged"
+  ]
+}

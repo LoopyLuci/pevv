@@ -33,6 +33,8 @@ mod provider;
 mod provider_core;
 #[cfg(all(feature = "win-passkey-provider", windows))]
 mod provider_win;
+mod transport;
+mod transport_core;
 mod usbkey;
 mod vault_store;
 mod winpath;
@@ -424,7 +426,18 @@ pub fn run() {
             autotype::autotype_cancel,
             autotype::autotype_type,
             autotype::autotype_finish,
-            autotype::autotype_mode
+            autotype::autotype_mode,
+            transport::transport_status,
+            transport::transport_enable,
+            transport::transport_set_addresses,
+            transport::transport_invite_create,
+            transport::transport_invite_cancel,
+            transport::transport_join,
+            transport::transport_pair_confirm,
+            transport::transport_peer_approve,
+            transport::transport_peer_revoke,
+            transport::transport_sync_now,
+            transport::transport_take_staged
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -446,6 +459,7 @@ pub fn run() {
             let lock_handle = handle.clone();
             presence::spawn_poller(presence, Arc::new(move || emit_lock(&lock_handle)));
             app.manage(Clip(SecretClipboard::new(System::new())));
+            transport::init(&handle, data_dir(&handle), store.clone());
             if let Some(w) = watch_vault(handle.clone(), store) {
                 app.manage(w);
             }

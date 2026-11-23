@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-peer-revoke"
+description = "Enables the transport_peer_revoke command without any pre-configured scope."
+commands.allow = ["transport_peer_revoke"]
+
+[[permission]]
+identifier = "deny-transport-peer-revoke"
+description = "Denies the transport_peer_revoke command without any pre-configured scope."
+commands.deny = ["transport_peer_revoke"]

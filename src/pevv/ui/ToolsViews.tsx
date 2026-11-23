@@ -18,6 +18,7 @@ import { inDesktopApp, inExtensionPage, nativePasskeysAvailable, passkeyEnrolAva
 import { getNative } from '../native';
 import { PresenceSection, UsbKeySection } from './UsbViews';
 import { BrowserLinkSection } from '../desktop/BrowserLink';
+import { TransferdSection } from '../desktop/TransferdPanel';
 import { AutoTypeSection } from '../desktop/AutoType';
 import { CliAccessSection } from '../desktop/CliAccess';
 import { PasskeyProviderSection } from '../desktop/PasskeyProvider';
@@ -408,6 +409,7 @@ export function SettingsView() {
       <UsbKeySection />
       <PresenceSection />
       {inDesktopApp() && <BrowserLinkSection />}
+      {inDesktopApp() && <TransferdSection />}
       {inDesktopApp() && <AutoTypeSection />}
       {inDesktopApp() && <CliAccessSection />}
       {inDesktopApp() && <PasskeyProviderSection />}

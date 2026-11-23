@@ -9,10 +9,15 @@ publish = false
 default-run = "pevv-desktop"
 
 [features]
-default = []
+default = ["transferd"]
 # PEVV as a Windows 11 passkey provider (plugin authenticator): COM class, registration, CTAP/CBOR codec.
 # Off by default: it only does anything from an MSIX install on Windows 11 (docs/PEVV_DESKTOP.md).
 win-passkey-provider = ["dep:ciborium", "dep:windows-core", "windows/Win32_System_Com"]
+# Device-to-device sync over the Transferd overlay (docs/TRANSPORT.md). On by default (the release build is clean with
+# it); `--no-default-features` leaves it out. Links ../../transport/pevv-transport
+# with its `overlay` feature. Compiled in, but the run-time switch is off until the person turns it on in
+# Settings, and there is no relay unless they add one. Without the feature the commands answer "not in this build".
+transferd = ["dep:pevv-transport", "dep:tokio"]
 
 [lib]
 name = "pevv_desktop_lib"
@@ -34,6 +39,8 @@ sha2 = "0.10"
 base64 = "0.22"
 url = "2"
 ciborium = { version = "0.2", optional = true }
+pevv-transport = { path = "../../transport/pevv-transport", features = ["overlay"], optional = true }
+tokio = { version = "1", default-features = false, features = ["sync", "time"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Turns WebView2's form autofill off (it would write typed field values to the profile in plaintext).

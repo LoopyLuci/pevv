@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-take-staged"
+description = "Enables the transport_take_staged command without any pre-configured scope."
+commands.allow = ["transport_take_staged"]
+
+[[permission]]
+identifier = "deny-transport-take-staged"
+description = "Denies the transport_take_staged command without any pre-configured scope."
+commands.deny = ["transport_take_staged"]

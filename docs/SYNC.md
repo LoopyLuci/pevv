@@ -13,6 +13,7 @@ clients (web, extension, desktop webview) and the Kotlin client (Android) both i
 | Cloud copy | The vault file, one row per account and path `/vault/pevv.vault.json` | table `pevv_blobs` (RPC `pevv_put`) |
 | Live devices | Paired devices open at the same time swap the file | Realtime topic `pevv:d:<vaultId>` |
 | Vault QR | One-time transfer | Realtime topic `pevv:<token>` |
+| Direct link (desktop, optional, off by default) | Paired desktops swap the sealed file over Transferd; a peer's copy goes through the same `reconcileRemote` merge as the cloud copy ([TRANSPORT.md](TRANSPORT.md)) | none (no relay unless you add one) |
 
 ## Cloud copy: compare-and-swap writes
 

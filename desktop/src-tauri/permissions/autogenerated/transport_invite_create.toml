@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-invite-create"
+description = "Enables the transport_invite_create command without any pre-configured scope."
+commands.allow = ["transport_invite_create"]
+
+[[permission]]
+identifier = "deny-transport-invite-create"
+description = "Denies the transport_invite_create command without any pre-configured scope."
+commands.deny = ["transport_invite_create"]

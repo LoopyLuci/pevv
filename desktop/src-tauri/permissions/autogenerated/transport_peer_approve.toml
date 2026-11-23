@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-peer-approve"
+description = "Enables the transport_peer_approve command without any pre-configured scope."
+commands.allow = ["transport_peer_approve"]
+
+[[permission]]
+identifier = "deny-transport-peer-approve"
+description = "Denies the transport_peer_approve command without any pre-configured scope."
+commands.deny = ["transport_peer_approve"]

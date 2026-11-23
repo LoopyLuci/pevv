@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-join"
+description = "Enables the transport_join command without any pre-configured scope."
+commands.allow = ["transport_join"]
+
+[[permission]]
+identifier = "deny-transport-join"
+description = "Denies the transport_join command without any pre-configured scope."
+commands.deny = ["transport_join"]

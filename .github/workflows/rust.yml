@@ -63,3 +63,6 @@ jobs:
       - name: cargo test
         working-directory: desktop/src-tauri
         run: cargo test
+      - name: cargo test (without the Transferd device link)
+        working-directory: desktop/src-tauri
+        run: cargo test --no-default-features

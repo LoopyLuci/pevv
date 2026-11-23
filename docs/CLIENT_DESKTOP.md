@@ -118,6 +118,18 @@ The PEVV extension (Chrome, Edge, Brave; protocol and extension side in docs/PEV
 
 Tested: framing and the 1 MB cap, HMAC (RFC 4231 vectors), the same MAC and fingerprint vectors as the TypeScript client, replay and tamper cases, pairing approval and refusal, origin handling, counter persistence, manifest generation for both platforms and the registry/file layout through a recording sink, a real pipe round trip (and a real file + throwaway `HKCU\Software\Luciverse-PevvTest-<pid>` registry round trip that is deleted afterwards), the host relay with a fake app. Not tested: a real browser launching the host, the installer hook, and the Linux socket code (it is written and checked only by code review here; the Linux-only tests run with `cargo test` on Linux).
 
+## Direct device link (Transferd)
+
+Optional sync straight between your own computers over the Transferd overlay, with no account and no server; design and threat model in [TRANSPORT.md](TRANSPORT.md). The shell runs the transport in process (`src/transport.rs`, policy in `transport_core.rs`, protocol in `transport/pevv-transport`); the vault window drives it (`src/pevv/desktop/transferd.ts`, panel in `TransferdPanel.tsx`, Settings, "Direct device link").
+
+- **Off by default.** The cargo feature `transferd` is on by default (`cargo build --no-default-features` leaves it out; the commands then answer `not-in-this-build`), and the run-time switch in Settings is off until the person turns it on. No relay is built in; add your own (UDP `host:port`, up to 4) or pair on one network with a direct address. No inbound port is opened.
+- **Ciphertext only.** Only the sealed vault file crosses. The shell never writes a peer's file to the vault file: it holds it and the window merges it with the same `reconcileRemote` as the cloud copy ([SYNC.md](SYNC.md)); a locked window stages it for the next unlock. Supabase keeps running beside it, so with no peer reachable the cloud copy carries on.
+- **Files.** `<app data>/transferd/`: `transferd.json` (switch, device name, relays, the peers you approved or removed), the sealed node seed (DPAPI on Windows, an owner-only file elsewhere; the panel says which), `overlay-state.json` and `overlay-audit.jsonl`. It follows `PEVV_DATA_DIR`. Nothing is created until the switch is on.
+- **Pairing.** "Add a device" shows a one-time invite as QR and text; the other device pastes it under "Join a device". Both screens show six words; the inviting device approves only if they match. Removing a device stops direct sync with it at once and runs the vault-key rotation (needs the master password).
+- **Window access.** The commands have their own `allow-transport-*` permissions in `capabilities/transport.json` (main window only). The webview CSP is unchanged: the networking is in the shell, not in the page.
+- **Not yet.** An empty device cannot receive its first copy this way (it must already hold the vault); peers are not yet tied to roster entries; the extension does not use it. Untested on two real machines and on Linux. See the status list in TRANSPORT.md.
+- **Tests.** `cargo test` (with and without the feature), `tests/unit/pevv.transferd.test.ts`.
+
 ## Auto-type into other programs
 
 Press a global shortcut (default **Ctrl+Alt+A**, changeable in Settings, Auto-type into other programs) while any program is in front, pick a login in a small window, and PEVV types it there. Browsers have the extension for this; auto-type is for programs that have none: an SSH or RDP client, a VPN login, a desktop app.
@@ -262,6 +274,7 @@ npm run desktop:dev         # vite on :1421 and a Tauri window
 npm run desktop:build       # web build, then the installers (VITE_PEVV_SYNC_URL / PEVV_RP_ID are read from the environment)
 cd desktop/src-tauri && cargo test && cargo clippy --all-targets -- -D warnings
 cd desktop/src-tauri && cargo test --features win-passkey-provider   # the Windows passkey provider (off by default)
+cd desktop/src-tauri && cargo test --no-default-features             # without the Transferd device link (on by default)
 ```
 
 Bundles (`desktop/src-tauri/target/release/bundle/`): `nsis/PEVV_0.1.0_x64-setup.exe` and `msi/PEVV_0.1.0_x64_en-US.msi` on Windows; `appimage/` and `deb/` on Linux (build those on Linux). Icons live in `desktop/src-tauri/icons/` (regenerate from a 512 px PNG with `npx tauri icon <png> -o desktop/src-tauri/icons`). The installers are not code-signed yet, so Windows SmartScreen warns on first run.

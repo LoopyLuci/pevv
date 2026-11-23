@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-invite-cancel"
+description = "Enables the transport_invite_cancel command without any pre-configured scope."
+commands.allow = ["transport_invite_cancel"]
+
+[[permission]]
+identifier = "deny-transport-invite-cancel"
+description = "Denies the transport_invite_cancel command without any pre-configured scope."
+commands.deny = ["transport_invite_cancel"]

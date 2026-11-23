@@ -9,6 +9,8 @@ import { listen } from '@tauri-apps/api/event';
 import { seedDesktop, startDesktopBridge, type DesktopIpc } from './bridge';
 import { createNative } from './native';
 import { startLink } from './link';
+import { startTransferd } from './transferd';
+import { describeDevice, localDeviceId } from '../devices';
 import { startAutoType } from './autotypeHost';
 import { startCli } from './cli';
 import { startProvider } from './provider';
@@ -78,6 +80,11 @@ async function boot(): Promise<void> {
         envVars: (env) => store.envVars(env),
       },
     },
+  );
+  // Direct device link (Transferd): a no-op until the person switches it on in Settings. A peer's file goes through the same merge as the cloud copy.
+  await startTransferd(
+    { invoke: (cmd, args) => invoke(cmd, args), listen: (event, fn) => listen(event, (e) => fn(e.payload as never)) },
+    { reconcileRemote: store.reconcileRemote, onVaultWrite: (fn) => store.onVaultWrite(() => fn()), device: () => ({ id: localDeviceId(), name: describeDevice().name }) },
   );
   // Global-hotkey auto-type into other programs, and `pevv` (the command-line tool): both ask the unlocked vault here.
   const shell = { invoke: <T,>(cmd: string, args?: Record<string, unknown>) => invoke<T>(cmd, args), listen: <P,>(event: string, fn: (payload: P) => void) => listen<P>(event, (e) => fn(e.payload)) };

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-set-addresses"
+description = "Enables the transport_set_addresses command without any pre-configured scope."
+commands.allow = ["transport_set_addresses"]
+
+[[permission]]
+identifier = "deny-transport-set-addresses"
+description = "Denies the transport_set_addresses command without any pre-configured scope."
+commands.deny = ["transport_set_addresses"]

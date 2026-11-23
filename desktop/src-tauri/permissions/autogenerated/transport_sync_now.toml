@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-transport-sync-now"
+description = "Enables the transport_sync_now command without any pre-configured scope."
+commands.allow = ["transport_sync_now"]
+
+[[permission]]
+identifier = "deny-transport-sync-now"
+description = "Denies the transport_sync_now command without any pre-configured scope."
+commands.deny = ["transport_sync_now"]

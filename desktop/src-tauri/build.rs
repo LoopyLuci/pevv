@@ -41,6 +41,17 @@ fn main() {
         "passkey_provider_unregister",
         "passkey_provider_respond",
         "passkey_provider_sync",
+        "transport_status",
+        "transport_enable",
+        "transport_set_addresses",
+        "transport_invite_create",
+        "transport_invite_cancel",
+        "transport_join",
+        "transport_pair_confirm",
+        "transport_peer_approve",
+        "transport_peer_revoke",
+        "transport_sync_now",
+        "transport_take_staged",
     ])))
     .expect("tauri build failed");
 }
