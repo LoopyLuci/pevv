@@ -78,7 +78,7 @@ jobs:
           if-no-files-found: error
 
   android:
-    name: Android APK (unsigned)
+    name: Android APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,18 +88,31 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;35.0.0"
-      # No keystore is configured here: the APK is unsigned (see docs/ANDROID.md for signing it yourself).
-      - name: Unit tests and unsigned release build
+      # Signs with the repo's release key when the PEVV_KEYSTORE_* secrets exist (forks: unsigned).
+      - name: Unit tests and release build
         working-directory: android
+        env:
+          KEYSTORE_B64: ${{ secrets.PEVV_KEYSTORE_BASE64 }}
+          PEVV_KEYSTORE_PASSWORD: ${{ secrets.PEVV_KEYSTORE_PASSWORD }}
+          PEVV_KEY_ALIAS: ${{ secrets.PEVV_KEY_ALIAS }}
+          PEVV_KEY_PASSWORD: ${{ secrets.PEVV_KEY_PASSWORD }}
         run: |
           export JAVA_HOME="$JAVA_HOME_17_X64"
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/pevv.jks"
+            export PEVV_KEYSTORE_FILE="$RUNNER_TEMP/pevv.jks"
+          fi
           bash ./gradlew test assembleRelease --console=plain
+          rm -f "$RUNNER_TEMP/pevv.jks"
       - name: Name the APK
-        run: cp android/app/build/outputs/apk/release/app-release-unsigned.apk "pevv-android-${GITHUB_REF_NAME}-unsigned.apk"
+        run: |
+          out=android/app/build/outputs/apk/release
+          if [ -f "$out/app-release.apk" ]; then cp "$out/app-release.apk" "pevv-android-${GITHUB_REF_NAME}.apk"
+          else cp "$out/app-release-unsigned.apk" "pevv-android-${GITHUB_REF_NAME}-unsigned.apk"; fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-android
-          path: pevv-android-*-unsigned.apk
+          path: pevv-android-*.apk
           if-no-files-found: error
 
   publish:
