@@ -23,3 +23,7 @@ regexes = ['''"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA[A-Za-z0-9+/=]
 description = "A public authenticator AAGUID constant (identifies the PEVV passkey provider, like a model number)."
 paths = ['''src/pevv/passkeyProvider\.ts''']
 regexes = ['''PASSKEY_PROVIDER_AAGUID''']
+
+[[allowlists]]
+description = "Generated test vectors (scripts/android-vectors.mjs): throwaway keys made for the cross-client tests, never used anywhere real."
+paths = ['''android/app/src/test/resources/vectors/''']
