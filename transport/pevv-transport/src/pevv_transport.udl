@@ -1,0 +1,139 @@
+// UniFFI interface for the Android client (docs/TRANSPORT.md section 7.2, phase 5).
+//
+// Generation only: nothing in the Android app uses this yet. Kotlin owns the vault and its
+// storage (`VaultStoreCallback`) and the Android Keystore wrapping of the node seed
+// (`SeedSealerCallback`, an AES-256-GCM Keystore key with setUnlockedDeviceRequired).
+// Rust owns the Transferd node, pairing and the PSP/1 streams. Only sealed vault bytes cross
+// this boundary; no password, vault key or plaintext ever does.
+//
+// Calls block the calling thread: invoke them from a background dispatcher.
+
+namespace pevv_transport {
+    // The PSP/1 protocol version this build speaks.
+    u32 psp_version();
+    // SHA-256 (lowercase hex) of a sealed vault file, as used in every PSP message.
+    string psp_hash(sequence<u8> sealed_file);
+};
+
+[Error]
+enum FfiError {
+    "Disabled",
+    "Config",
+    "Seal",
+    "Overlay",
+    "Protocol",
+    "Denied",
+    "Invalid",
+    "Timeout",
+    "Io",
+    "Callback",
+};
+
+dictionary FfiConfig {
+    // Master switch. false: start() fails with Disabled and nothing is created.
+    boolean enabled;
+    // Device name published in invites.
+    string name;
+    // App-private, no-backup folder for the sealed seed and overlay state.
+    string state_dir;
+    // User-configured relays as host:port (UDP). There is no default relay.
+    sequence<string> relays;
+    // Addresses to publish for direct dialling.
+    sequence<string> direct;
+    boolean punch;
+};
+
+dictionary FfiHead {
+    u64 rev;
+    string hash;
+};
+
+enum FfiApply {
+    "Applied",
+    "Stale",
+    "Rejected",
+};
+
+dictionary FfiPairing {
+    string node_id;
+    string key_fingerprint;
+    sequence<string> sas;
+};
+
+dictionary FfiReport {
+    // Revision adopted from the peer, if any.
+    u64? adopted_rev;
+    // Revision of a fork seen, if any.
+    u64? fork_rev;
+    // "ok", "stale", "fork", "invalid" or "denied" if a push was answered.
+    string? push_result;
+};
+
+dictionary FfiEvent {
+    // "adopted", "fork", "push-answered", "push-handled", "refused", "revoked",
+    // "pair-request", "pair-resolved"
+    string kind;
+    string node_id;
+    // Human-readable, never contains vault bytes.
+    string detail;
+    // The six words for "pair-request".
+    sequence<string> sas;
+};
+
+// Wraps and unwraps the 64-byte node seed with an Android Keystore key.
+callback interface SeedSealerCallback {
+    [Throws=FfiError]
+    sequence<u8> seal(sequence<u8> seed);
+    [Throws=FfiError]
+    sequence<u8> unseal(sequence<u8> sealed);
+};
+
+// The vault engine's side of sync. All methods must be quick and thread-safe.
+callback interface VaultStoreCallback {
+    string vault_id();
+    string device_id();
+    FfiHead? head();
+    // The current sealed file, if any.
+    sequence<u8>? current();
+    // validateFile (and readMeta when unlocked).
+    boolean validate(u64 rev, sequence<u8> sealed_file);
+    // Compare-and-swap: store only if the current revision is still `base`.
+    FfiApply apply(u64 base, u64 rev, sequence<u8> sealed_file);
+    // Equal revision, different file: keep both, make the higher hash current.
+    // Returns true when the peer's copy became current.
+    boolean resolve_fork(u64 rev, string hash, sequence<u8> sealed_file);
+};
+
+callback interface EventCallback {
+    void on_event(FfiEvent event);
+};
+
+interface PevvTransport {
+    [Throws=FfiError]
+    constructor(FfiConfig config, SeedSealerCallback sealer, VaultStoreCallback store, EventCallback events);
+
+    string node_id();
+    string key_fingerprint();
+    sequence<string> fingerprint_words();
+
+    [Throws=FfiError]
+    string invite_create(u64 ttl_secs);
+    void cancel_invite();
+    [Throws=FfiError]
+    FfiPairing invite_accept(string invite, string? name);
+    [Throws=FfiError]
+    void confirm_pairing(string node_id, boolean approved);
+
+    // Replace the allow-list with the node ids derived from the sealed roster.
+    [Throws=FfiError]
+    void set_allow(sequence<string> node_ids);
+    [Throws=FfiError]
+    void revoke(string node_id, u64 roster_rev);
+
+    [Throws=FfiError]
+    FfiReport sync_with(string node_id);
+    [Throws=FfiError]
+    FfiReport push_to(string node_id);
+
+    void shutdown();
+};
