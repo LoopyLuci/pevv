@@ -48,7 +48,7 @@ webview2-com = "0.39"
 # The `windows-core` that webview2-com is built on (the `windows` 0.61 above is a different copy).
 windows-core-webview = { package = "windows-core", version = "0.62" }
 # The COM macros (`implement`, `interface`) name this crate in what they generate.
-windows-core = { version = "0.61", optional = true }
+windows-core = { version = "0.62", optional = true }
 windows = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Devices_DeviceAndDriverInstallation",
