@@ -128,7 +128,11 @@ jobs:
           path: assets
           merge-multiple: true
       - name: Checksums
-        run: cd assets && sha256sum * > SHA256SUMS && cat SHA256SUMS
+        run: |
+          # Artifacts arrive in sub-folders (nsis/, msi/, ...): flatten them first.
+          find assets -mindepth 2 -type f -exec mv -t assets {} +
+          find assets -mindepth 1 -type d -empty -delete
+          cd assets && sha256sum * > SHA256SUMS && cat SHA256SUMS
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           draft: true
