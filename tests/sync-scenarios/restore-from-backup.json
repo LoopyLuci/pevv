@@ -1,0 +1,143 @@
+{
+ "name": "restore-from-backup",
+ "description": "Restoring a backup revision brings the items back as a new revision but keeps the current device roster and revocations.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ],
+   "meta": {
+    "devices": [
+     {
+      "id": "aaaaaaaa",
+      "name": "A",
+      "kind": "phone",
+      "added": 900,
+      "seen": 1000,
+      "agent": "Test"
+     },
+     {
+      "id": "cccccccc",
+      "name": "C",
+      "kind": "phone",
+      "added": 900,
+      "seen": 1000,
+      "agent": "Test"
+     }
+    ]
+   }
+  },
+  {
+   "op": "snapshot",
+   "device": "aaaaaaaa",
+   "name": "backup"
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000,
+   "set": {
+    "password": "overwritten by mistake"
+   }
+  },
+  {
+   "op": "add",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "at": 2100,
+   "data": {
+    "type": "login",
+    "title": "Three",
+    "site": "https://three.example.test",
+    "username": "user",
+    "password": "pw-Three",
+    "tags": [],
+    "favorite": false,
+    "created": 2100,
+    "updated": 2100,
+    "history": []
+   }
+  },
+  {
+   "op": "delete",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "at": 2200
+  },
+  {
+   "op": "revoke",
+   "device": "aaaaaaaa",
+   "target": "cccccccc",
+   "at": 2300
+  },
+  {
+   "op": "restore",
+   "device": "aaaaaaaa",
+   "name": "backup",
+   "at": 3000
+  }
+ ],
+ "asserts": [
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "password",
+   "equals": "pw-One"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "field": "title",
+   "equals": "Two"
+  },
+  {
+   "t": "absent",
+   "device": "aaaaaaaa",
+   "id": "i3"
+  },
+  {
+   "t": "meta",
+   "device": "aaaaaaaa",
+   "key": "revokedDevices",
+   "equals": [
+    "cccccccc"
+   ]
+  }
+ ]
+}

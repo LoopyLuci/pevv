@@ -35,6 +35,8 @@ class SyncManager(
     private val lock = Mutex()
     private var loaded = false
     private var cloudBody: String? = null
+    /** Revision of the server row the last pull or write saw: the compare-and-swap token of the next write. */
+    private var cloudRev = 0L
     private var lastWritten = ""
     private var absorbed = ""
     private var foreground = false
@@ -68,6 +70,7 @@ class SyncManager(
             account = a
             loaded = false
             cloudBody = null
+            cloudRev = 0
             if (a != null) scope.launch { pull(); startWatch() } else stopWatch()
         }
         if (enabled) {
@@ -112,7 +115,9 @@ class SyncManager(
             syncing = true
             try {
                 val rows = auth.pull() ?: return
-                val body = rows.firstOrNull { it.path == Supabase.SYNC_PATH }?.body
+                val row = rows.firstOrNull { it.path == Supabase.SYNC_PATH }
+                val body = row?.body
+                cloudRev = row?.rev ?: 0
                 val first = !loaded
                 loaded = true
                 val changed = body != cloudBody
@@ -139,6 +144,7 @@ class SyncManager(
             absorbed = body
             lastWritten = ctl.file?.toText() ?: body
             if (!hadVault) ctl.prefs.syncOn = true
+            ctl.file?.let { if (it.toText() == body) ctl.markSynced(it) }
         }
     }
 
@@ -147,7 +153,7 @@ class SyncManager(
         lock.withLock { mirrorLocked(file) }
     }
 
-    private suspend fun mirrorLocked(file: VaultFile?) {
+    private suspend fun mirrorLocked(file: VaultFile?, attempt: Int = 0) {
         if (!loaded || auth.currentAccount == null || file == null || !ctl.prefs.syncOn) return
         val body = file.toText()
         if (body.length > Supabase.MAX_SYNC) { error = "too-large"; return }
@@ -155,19 +161,39 @@ class SyncManager(
         if (existing != null && existing != body) {
             try {
                 val remote = VaultFile.parse(existing)
-                // A device that still has an older copy must not overwrite the newer one.
-                if (remote.id == file.id && remote.rev > file.rev) return
+                // A device that still has an older copy (or an older key) must not overwrite the newer one: it merges first.
+                if (remote.id == file.id && (remote.rev > file.rev || remote.keyEpoch > file.keyEpoch)) return
             } catch (_: Exception) { /* replace a file that is not a vault */ }
         }
         if (body == lastWritten || existing == body) return
         lastWritten = body
         try {
-            auth.push(Supabase.SYNC_PATH, body)
-            cloudBody = body
-            lastSyncAt = System.currentTimeMillis()
-            error = null
+            val res = auth.push(Supabase.SYNC_PATH, body, cloudRev)
+            if (res.ok) {
+                cloudBody = body
+                cloudRev = res.rev
+                lastSyncAt = System.currentTimeMillis()
+                error = null
+                ctl.markSynced(file)
+                return
+            }
+            lastWritten = ""
+            when (res.error) {
+                "conflict" -> {
+                    // The server moved on since this device last looked: learn its revision, merge its copy, then write again.
+                    cloudRev = res.rev
+                    val theirs = res.body
+                    if (theirs != null) { cloudBody = theirs; absorbed = "" }
+                    if (attempt >= 2) { error = "unknown"; return }
+                    if (theirs != null) inbound()
+                    mirrorLocked(ctl.file, attempt + 1)
+                }
+                "rate-limited", "too-large", "rev-regressed" -> error = res.error
+                "not-allowed", "bad-body", "not-signed-in" -> error = "denied"
+                else -> error = "unknown"
+            }
         } catch (e: SyncError) {
-            error = e.code
+            error = if (e.code == "http-401" || e.code == "http-403") "denied" else e.code
             lastWritten = ""
         }
     }
@@ -181,7 +207,7 @@ class SyncManager(
             // Turning sync off forgets the cloud copy, so a later edit on a device that is not syncing cannot clobber it.
             lock.withLock {
                 if (cloudBody != null) try { auth.remove(Supabase.SYNC_PATH) } catch (_: SyncError) { }
-                cloudBody = null; lastWritten = ""; absorbed = ""
+                cloudBody = null; cloudRev = 0; lastWritten = ""; absorbed = ""
             }
         }
     }
@@ -197,6 +223,7 @@ class SyncManager(
         auth.signOut()
         account = null
         cloudBody = null
+        cloudRev = 0
         loaded = false
     }
 

@@ -6,10 +6,11 @@ import { reuseGroups } from '../model';
 import { auditCsv, watchtower } from '../extra';
 import { syncEnabled } from '../host/cloud';
 import { SyncAccountBox } from './SyncAccount';
+import { SyncStatusPanel } from './SyncStatus';
 import { otpauthUri, type TotpConfig } from '../totp';
 import {
   addPasskey, clearAudit, importCsvText, linkProgramEnv, renamePasskey, changeMasterPassword, confirmTotpEnrollment, destroyVault, disableTotp, exportVault, importVault, lock, newRecoveryCodes, newRecoveryKit,
-  removePasskey, renameThisDevice, revokeDevice, revokeGrant, setPrefs, setRequirePasskey, startTotpEnrollment, usePevv,
+  removePasskey, renameThisDevice, revokeAndRotate, revokeDevice, revokeGrant, setPrefs, setRequirePasskey, startTotpEnrollment, usePevv,
 } from '../store';
 import { recoveryStatus, peekExport } from '../vault';
 import { localDeviceId } from '../devices';
@@ -290,8 +291,20 @@ export function DevicesView() {
   const [name, setName] = useState('');
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [rotate, setRotate] = useState(true);
+  const [pw, setPw] = useState('');
+  const [rotateError, setRotateError] = useState<string | null>(null);
+  const [rotated, setRotated] = useState<{ codes: string[]; recoveryKey: string | null; dropped: string[] } | null>(null);
   const [gateNode, gate] = useReauthGate();
   const devices = meta?.devices ?? [];
+  const doRemove = (id: string) => {
+    setRotateError(null);
+    const done = () => { setConfirm(null); setPw(''); };
+    if (!rotate) { void revokeDevice(id).then(done).catch(() => undefined); return; }
+    void revokeAndRotate(id, pw)
+      .then((r) => { setRotated({ codes: r.codes, recoveryKey: r.recoveryKey, dropped: r.dropped.map((d) => d.name ?? d.type) }); done(); })
+      .catch((e: Error) => setRotateError(e.message));
+  };
   const fmt = new Intl.DateTimeFormat(locale === 'es' ? 'es' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
   const ago = (seen: number) => {
     const s = Math.max(0, Date.now() - seen);
@@ -327,9 +340,14 @@ export function DevicesView() {
                     <button type="button" className={btn} onClick={() => { setName(d.name); setEditing(true); }} data-testid="pevv-device-rename">{t('renameDevice')}</button>
                   )
                 ) : confirm === d.id ? (
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" className={btnDanger} disabled={busy} data-testid="pevv-device-remove-confirm" onClick={() => gate(() => void revokeDevice(d.id).then(() => setConfirm(null)).catch(() => undefined), t('reauthExport'))}>{t('confirmRemoveDevice')}</button>
-                    <button type="button" className={btn} onClick={() => setConfirm(null)}>{t('cancel')}</button>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-start gap-2 text-ink-secondary"><input type="checkbox" checked={rotate} onChange={(e) => setRotate(e.target.checked)} className="mt-0.5" data-testid="pevv-device-rotate" /> <span>{t('removeRotate')}<br /><span className="text-[0.62rem] text-ink-muted">{t('rotateWhy')}</span></span></label>
+                    {rotate && <input type="password" className={`${input} max-w-xs`} value={pw} onChange={(e) => setPw(e.target.value)} placeholder={t('rotatePassword')} aria-label={t('rotatePassword')} autoComplete="current-password" data-testid="pevv-device-rotate-password" />}
+                    {rotateError && <p className="text-amber-300" role="alert">{rotateError}</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className={btnDanger} disabled={busy || (rotate && !pw)} data-testid="pevv-device-remove-confirm" onClick={() => gate(() => doRemove(d.id), t('reauthExport'))}>{t('confirmRemoveDevice')}</button>
+                      <button type="button" className={btn} onClick={() => { setConfirm(null); setPw(''); }}>{t('cancel')}</button>
+                    </div>
                   </div>
                 ) : (
                   <button type="button" className={btnDanger} data-testid={`pevv-device-remove-${d.id}`} onClick={() => setConfirm(d.id)}>{t('removeDevice')}</button>
@@ -339,6 +357,15 @@ export function DevicesView() {
           </ul>
         )}
       </Section>
+      {rotated && (
+        <Section title={t('rotateNewCodes')} testId="pevv-rotated">
+          <p className="text-xs text-ink-secondary">{t('rotateDone')}</p>
+          {rotated.codes.length > 0 && <pre className="select-all rounded-md bg-space-surface/60 p-2 text-xs" data-testid="pevv-rotated-codes">{rotated.codes.join('\n')}</pre>}
+          {rotated.recoveryKey && <><p className="text-xs text-ink-secondary">{t('rotateNewKey')}</p><pre className="select-all rounded-md bg-space-surface/60 p-2 text-xs">{rotated.recoveryKey}</pre></>}
+          {rotated.dropped.length > 0 && <p className="text-xs text-amber-300">{t('rotateDropped', { list: rotated.dropped.join(', ') })}</p>}
+          <button type="button" className={btn} onClick={() => setRotated(null)}>{t('iSavedThem')}</button>
+        </Section>
+      )}
       <ErrorLine />
     </div>
   );
@@ -396,6 +423,7 @@ export function SettingsView() {
           <span>{t('syncVault')}<br /><span className="text-[0.62rem] text-ink-muted">{syncEnabled() ? t('syncHint') : t('syncOff')}</span></span>
         </label>
         {syncEnabled() && <SyncAccountBox />}
+        {syncEnabled() && <SyncStatusPanel />}
       </Section>
       <ProjectEnvSection />
       <Section title={t('programAccess')} testId="pevv-grants">

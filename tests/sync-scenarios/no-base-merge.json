@@ -1,0 +1,154 @@
+{
+ "name": "no-base-merge",
+ "description": "Without a last-synced copy nothing is ever lost: a newer item is taken without a conflict, deleted items come back, a true clash keeps both.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i3",
+     "data": {
+      "type": "login",
+      "title": "Three",
+      "site": "https://three.example.test",
+      "username": "user",
+      "password": "pw-Three",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000,
+   "set": {
+    "notes": "first"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2100,
+   "set": {
+    "notes": "second"
+   }
+  },
+  {
+   "op": "delete",
+   "device": "bbbbbbbb",
+   "id": "i2",
+   "at": 2200
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "at": 2300,
+   "set": {
+    "notes": "A"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i3",
+   "at": 2400,
+   "set": {
+    "notes": "B"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "base": false,
+   "now": 3000,
+   "expect": {
+    "kind": "merged",
+    "conflicts": [
+     "i3/edited-both"
+    ]
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "notes",
+   "equals": "second"
+  },
+  {
+   "t": "conflicts",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "n": 0
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "field": "title",
+   "equals": "Two"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "field": "notes",
+   "equals": "B"
+  },
+  {
+   "t": "conflicts",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "n": 1
+  }
+ ]
+}

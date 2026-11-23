@@ -105,9 +105,14 @@ object VaultEngine {
         throw DecryptError("recovery key does not match this vault")
     }
 
+    /** The device id stamped into the sealed meta of every write, so other devices can reject a write from a revoked one. */
+    @Volatile
+    var writerId: String? = null
+
     /** Bump the revision and re-seal meta (the meta AAD is bound to the revision). */
-    fun commit(file: VaultFile, session: Session, meta: VaultMeta, patch: Map<String, JsonElement?> = emptyMap(), now: Long = System.currentTimeMillis()): VaultFile {
+    fun commit(file: VaultFile, session: Session, meta0: VaultMeta, patch: Map<String, JsonElement?> = emptyMap(), now: Long = System.currentTimeMillis()): VaultFile {
         val rev = file.rev + 1
+        val meta = writerId?.let { meta0.with(mapOf("lastWriter" to jstr(it))) } ?: meta0
         val req = meta.require
         val next = file.with(patch).with(mapOf("rev" to jnum(rev), "updated" to jnum(now)))
         return next.with(

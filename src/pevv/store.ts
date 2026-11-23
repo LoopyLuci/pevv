@@ -18,6 +18,11 @@ import { HANDOFF_PATH, openHandoff, readHashToken, sealHandoff, shareUrl, stripH
 import { asDevices, clearVaultRevoked, describeDevice, deviceNeedsWrite, localDeviceId, markVaultRevoked, mergeDevices, mergeRoster, sameRoster, setLocalDeviceName, vaultRevokedLocally } from './devices';
 import { armVaultBio, clearVaultBio } from './deviceBio';
 import { pullCloud, syncEnabled, useCloudFiles } from './host/cloud';
+import { type MergeOutcome, keyEpoch, mergeVaults } from './merge';
+import { rotateVaultKey } from './rotate';
+import { newRecoveryCode, newRecoveryKey, RECOVERY_CODE_COUNT } from './recovery';
+import { type SyncErrorCode, reportConflicts, reportError, reportNeedsUnlock, reportPending } from './syncStatus';
+import { validateKdf } from './crypto';
 import { dropTransfer, newTransferToken, pullTransfer, putTransfer } from './host/relay';
 
 export const VAULT_KEY = 'lv-pevv-vault-v1';
@@ -145,6 +150,28 @@ function persist(file: VaultFile | null): void {
   for (const fn of listeners) fn(file);
 }
 
+/* The copy last known to equal the server's (the base of the three-way merge). Ciphertext only, like the vault itself. */
+const BASE_KEY = 'lv-pevv-sync-base';
+const PREV_KEY = 'lv-pevv-vault-prev';
+function loadBase(id: string): VaultFile | null {
+  try {
+    const raw = localStorage.getItem(BASE_KEY);
+    if (!raw) return null;
+    const f = JSON.parse(raw) as VaultFile;
+    V.validateFile(f);
+    return f.id === id ? f : null;
+  } catch { return null; }
+}
+/** Record that this copy is what the server holds now. */
+export function markSynced(file: VaultFile): void {
+  try { localStorage.setItem(BASE_KEY, JSON.stringify(file)); } catch { /* quota: the next merge runs without a base (never loses data) */ }
+  const cur = get().file;
+  reportPending(!!cur && JSON.stringify(cur) !== JSON.stringify(file));
+}
+
+/** A newer copy that arrived while the vault was locked: it is checked (decrypted, authenticated) at the next unlock. */
+let staged: VaultFile | null = null;
+
 function serial<T>(fn: () => Promise<T>): Promise<T> {
   const run = queue.then(fn, fn);
   queue = run.catch(() => undefined);
@@ -208,6 +235,7 @@ async function openSession(s: V.Session, opts: { skip2fa?: boolean; passkeyDone?
     return;
   }
   clearVaultRevoked(file.id);
+  V.setWriterId(localDeviceId());
   V.endSession(session);
   session = s;
   const need = {
@@ -230,10 +258,14 @@ function finishUnlock(entries: Entry[]): void {
   pendingEntries = [];
   set({ status: 'unlocked', entries, pending: { totp: false, passkey: false, usbKey: false }, reauthUntil: Date.now() + get().prefs.revealReauthSec * 1000, busy: false });
   touch();
+  reportNeedsUnlock(false);
   const kind = unlockKind;
   unlockKind = 'unlock';
   void loadAudit().then(() => audit(kind));
   void rememberThisDevice();
+  const st = staged;
+  staged = null;
+  if (st && st.id === get().file?.id) void reconcileRemote(st, 'cloud');
 }
 
 let unlockKind: AuditEvent = 'unlock';
@@ -1036,14 +1068,78 @@ export async function adoptRemote(remote: VaultFile): Promise<boolean> {
   return serial(() => adoptRemoteInner(remote));
 }
 
+const REJECT_CODE: Record<string, SyncErrorCode> = {
+  'revoked-writer': 'rejected-revoked', 'stale-key': 'rejected-stale-key', 'key-mismatch': 'rejected-key', 'other-vault': 'rejected-vault',
+};
+
+/** Put a merged or newer copy in place and refresh what is on screen. Notifies the sync listeners when `notify` is set. */
+async function installFile(file: VaultFile, notify: boolean): Promise<boolean> {
+  try { localStorage.setItem(VAULT_KEY, JSON.stringify(file)); } catch { return false; }
+  set({ file });
+  if (get().status === 'unlocked' && session) {
+    try {
+      const d = await V.decryptAll(file, session);
+      set({ entries: d.entries, meta: d.meta, totp: d.totp, warnings: d.warnings });
+    } catch {
+      lock('manual');
+    }
+  }
+  if (notify) for (const fn of listeners) fn(file);
+  return true;
+}
+
+function selfRevoked(): boolean {
+  if (!(get().meta?.revokedDevices ?? []).includes(localDeviceId())) return false;
+  markVaultRevoked(get().file!.id);
+  destroyVault();
+  set({ error: 'device-revoked' });
+  return true;
+}
+
+/** The vault key was rotated on another device: keep the old copy as a backup, take the new one and ask for the password again. */
+async function takeRotated(remote: VaultFile): Promise<boolean> {
+  const old = get().file;
+  try { if (old) localStorage.setItem(PREV_KEY, JSON.stringify(old)); } catch { /* ignore */ }
+  const ok = await installFile(remote, false);
+  if (!ok) return false;
+  markSynced(remote);
+  lock('manual');
+  reportNeedsUnlock(true);
+  return true;
+}
+
+async function mergeInto(live: V.Session, local: VaultFile, remote: VaultFile): Promise<boolean> {
+  let out: MergeOutcome;
+  try { out = await mergeVaults(live, loadBase(local.id), local, remote, { writer: localDeviceId() }); }
+  catch { reportError('rejected-key'); return false; }
+  switch (out.kind) {
+    case 'same': markSynced(local); return true;
+    case 'rejected': reportError(REJECT_CODE[out.reason ?? ''] ?? 'unknown'); return false;
+    case 'key-rotated': return takeRotated(remote);
+    case 'kept-local': reportPending(true); return true;
+    default: {
+      const file = out.file!;
+      const ok = await installFile(file, out.kind === 'merged');
+      if (!ok) return false;
+      if (out.kind === 'took-remote') markSynced(file); else reportPending(true);
+      reportConflicts(out.conflicts.map((c) => ({ id: c.id, title: c.title, kind: c.kind, kept: c.kept })));
+      selfRevoked();
+      return true;
+    }
+  }
+}
+
 /**
  * Fold another copy of this vault into the open one.
- * A higher revision replaces items when `entries` is allowed (cloud sync on, or a live paired device).
- * The device list is always a union, so the phone that enrolled last still shows up on the computer.
+ * Unlocked: a real merge (docs/SYNC.md): items one by one, the loser of a same-item conflict kept, the device list a union,
+ * and a copy from a revoked writer or an older key refused. Locked: nothing is replaced. A locked device cannot tell a
+ * genuine newer copy from a forged or foreign one, so it keeps the copy it has, holds the new one back and checks it
+ * (decrypt, authenticate, merge) at the next unlock.
+ * `takeEntries` is false only for the cloud copy when sync is off: then just the device list is folded in.
  */
 export async function reconcileRemote(remote: VaultFile, source: 'cloud' | 'peer'): Promise<boolean> {
   return serial(async () => {
-    try { V.validateFile(remote); } catch { return false; }
+    try { V.validateFile(remote); validateKdf(remote.kdf); } catch { return false; }
     if (vaultRevokedLocally(remote.id)) return false;
     const local = get().file;
     if (local && local.id !== remote.id) return false;
@@ -1054,43 +1150,69 @@ export async function reconcileRemote(remote: VaultFile, source: 'cloud' | 'peer
       return adoptRemoteInner(remote);
     }
     if (!unlocked) {
-      if (takeEntries && remote.rev > local.rev) return adoptRemoteInner(remote);
+      if (takeEntries && (remote.rev > local.rev || keyEpoch(remote) > keyEpoch(local)) && JSON.stringify(remote) !== JSON.stringify(local)) {
+        staged = remote;
+        reportPending(true);
+      }
       return false;
     }
     const live = session;
     if (!live) return false;
+    if (takeEntries) return mergeInto(live, local, remote);
     let remoteMeta: VaultMeta;
     try { remoteMeta = await V.readMeta(remote, live); }
     catch { return false; }
-    const before = {
-      devices: asDevices(get().meta?.devices),
-      revokedDevices: [...(get().meta?.revokedDevices ?? [])],
-    };
-    let folded = false;
-    if (takeEntries && remote.rev > get().file!.rev) {
-      const ok = await adoptRemoteInner(remote);
-      if (!ok) return false;
-      folded = true;
-      if (get().status !== 'unlocked' || !get().meta) return true;
-    }
     const left = {
       devices: asDevices(get().meta?.devices),
       revokedDevices: [...(get().meta?.revokedDevices ?? [])],
     };
-    // After a full replace, put back any device that only this copy knew about.
-    // Otherwise take the other copy's roster (it may be older, but it has the phone).
-    const right = folded
-      ? before
-      : { devices: asDevices(remoteMeta.devices), revokedDevices: [...(remoteMeta.revokedDevices ?? [])] };
+    const right = { devices: asDevices(remoteMeta.devices), revokedDevices: [...(remoteMeta.revokedDevices ?? [])] };
     const merged = mergeRoster(left, right);
     if (!sameRoster(left, merged)) await writeMeta({ devices: merged.devices, revokedDevices: merged.revokedDevices });
-    if ((get().meta?.revokedDevices ?? []).includes(localDeviceId())) {
-      markVaultRevoked(get().file!.id);
-      destroyVault();
-      set({ error: 'device-revoked' });
-    }
+    selfRevoked();
     return true;
   });
+}
+
+export interface RotateReport { codes: string[]; recoveryKey: string | null; dropped: Array<{ id: string; type: string; name?: string }> }
+export interface RotateExtra { prf?: Record<string, Uint8Array>; usbKeyFiles?: string[] }
+
+/**
+ * Revoke a device and rotate the vault key, so the old key (and any old copy of the vault that holds it) is worthless.
+ * `password` must be the current master password. Recovery codes and the recovery key are issued again and returned:
+ * show them once. Passkey and USB-key slots are re-wrapped only when their secret is supplied; the others are removed
+ * and listed in `dropped` so the user can add them again.
+ */
+export async function revokeAndRotate(id: string, password: string, extra: RotateExtra = {}): Promise<RotateReport> {
+  await revokeDevice(id);
+  return rotateKey(password, extra);
+}
+
+export async function rotateKey(password: string, extra: RotateExtra = {}): Promise<RotateReport> {
+  return withBusy(() => serial(async () => {
+    const { file, s } = need();
+    // The password has to be the real one: it becomes the only password slot.
+    const check = await V.unlockWithPassword(file, password);
+    V.endSession(check);
+    const kdf = await kdfFactory(file.kdf.alg === 'argon2id' && file.kdf.m > 65_536 ? 'strong' : 'standard');
+    const hadCodes = file.slots.filter((x) => x.type === 'recovery-code').length;
+    const hadKey = file.slots.some((x) => x.type === 'recovery-key');
+    const codes = hadCodes ? Array.from({ length: Math.min(hadCodes, RECOVERY_CODE_COUNT) }, () => newRecoveryCode()) : [];
+    const recoveryKey = hadKey ? newRecoveryKey() : null;
+    const res = await rotateVaultKey(file, s, {
+      password, kdf, recoveryCodes: codes, dropUnknown: true,
+      ...(recoveryKey ? { recoveryKey } : {}), ...(extra.prf ? { prf: extra.prf } : {}), ...(extra.usbKeyFiles ? { usbKeyFiles: extra.usbKeyFiles } : {}),
+    });
+    V.endSession(session);
+    session = res.session;
+    clearVaultBio();
+    set({ file: res.file });
+    persist(res.file);
+    const d = await V.decryptAll(res.file, res.session);
+    set({ entries: d.entries, meta: d.meta, totp: d.totp, warnings: d.warnings });
+    audit('key-rotate', undefined, `epoch ${keyEpoch(res.file)}`);
+    return { codes, recoveryKey, dropped: res.dropped };
+  }));
 }
 
 let remembering = false;

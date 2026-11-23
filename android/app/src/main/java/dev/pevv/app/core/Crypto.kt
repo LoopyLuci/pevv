@@ -181,9 +181,10 @@ object Crypto {
         }
     }
 
-    fun seal(key: ByteArray, plain: ByteArray, aad: String): Sealed {
+    /** `iv` is for golden tests only; production always takes a fresh random 96-bit IV (invariant 5 in AGENTS.md). */
+    fun seal(key: ByteArray, plain: ByteArray, aad: String, iv: ByteArray = Bytes.random(12)): Sealed {
         require(key.size == 32) { "key must be 256 bits" }
-        val iv = Bytes.random(12)
+        require(iv.size == 12) { "IV must be 96 bits" }
         val c = Cipher.getInstance("AES/GCM/NoPadding")
         c.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(AES_TAG_BITS, iv))
         c.updateAAD(utf8(aad))
@@ -210,7 +211,8 @@ object Crypto {
         }
     }
 
-    fun sealJson(key: ByteArray, value: JsonElement, aad: String): Sealed = seal(key, utf8(Json.encode(value)), aad)
+    fun sealJson(key: ByteArray, value: JsonElement, aad: String, iv: ByteArray? = null): Sealed =
+        if (iv == null) seal(key, utf8(Json.encode(value)), aad) else seal(key, utf8(Json.encode(value)), aad, iv)
 
     fun openJson(key: ByteArray, s: Sealed, aad: String): JsonElement {
         val pt = open(key, s, aad)
@@ -225,8 +227,8 @@ object Crypto {
 
     fun newVaultKey(): ByteArray = Bytes.random(32)
 
-    fun wrapVaultKey(kek: ByteArray, vaultKey: ByteArray, vaultId: String, slotId: String): Sealed =
-        seal(kek, vaultKey, Aad.slot(vaultId, slotId))
+    fun wrapVaultKey(kek: ByteArray, vaultKey: ByteArray, vaultId: String, slotId: String, iv: ByteArray? = null): Sealed =
+        if (iv == null) seal(kek, vaultKey, Aad.slot(vaultId, slotId)) else seal(kek, vaultKey, Aad.slot(vaultId, slotId), iv)
 
     fun unwrapVaultKey(kek: ByteArray, wrapped: Sealed, vaultId: String, slotId: String): ByteArray {
         val raw = open(kek, wrapped, Aad.slot(vaultId, slotId))

@@ -1,0 +1,111 @@
+{
+ "name": "rotated-key-stale-writer",
+ "description": "After a key rotation a copy still sealed under the old key is rejected; the device with the old key is told to unlock again.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "rotate",
+   "device": "aaaaaaaa",
+   "at": 2000,
+   "newKeyHex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "at": 2100,
+   "set": {
+    "password": "written-with-the-old-key"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3000,
+   "expect": {
+    "kind": "rejected",
+    "reason": "stale-key"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3100,
+   "expect": {
+    "kind": "key-rotated"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "top",
+   "device": "aaaaaaaa",
+   "key": "keyEpoch",
+   "equals": 1
+  },
+  {
+   "t": "top",
+   "device": "aaaaaaaa",
+   "key": "v",
+   "equals": 2
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "password",
+   "equals": "pw-One"
+  },
+  {
+   "t": "slotTypes",
+   "device": "aaaaaaaa",
+   "equals": [
+    "password"
+   ]
+  }
+ ]
+}

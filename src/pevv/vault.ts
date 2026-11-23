@@ -74,9 +74,11 @@ export async function createVault(password: string, kdf?: KdfParams): Promise<{ 
 
 export function validateFile(f: unknown): asserts f is VaultFile {
   const v = f as VaultFile;
-  if (!v || v.format !== VAULT_FORMAT || v.v !== 1 || typeof v.id !== 'string' || !Array.isArray(v.slots) || !Array.isArray(v.entries)) {
+  if (!v || v.format !== VAULT_FORMAT || (v.v !== 1 && v.v !== 2) || typeof v.id !== 'string' || !Array.isArray(v.slots) || !Array.isArray(v.entries)) {
     throw new Error('not a PEVV vault file');
   }
+  // v2 is a vault whose key was rotated: it must say so, so a stale copy can be told apart from it.
+  if (v.v === 2 && !(Number.isInteger(v.keyEpoch) && (v.keyEpoch as number) >= 1)) throw new Error('not a PEVV vault file');
   // Slot types this client does not know are kept and ignored (older clients do the same with usb-key);
   // the ones it does know about must be well formed.
   for (const s of v.slots as unknown[]) {
@@ -199,9 +201,14 @@ export async function unlockWithRecoveryKey(file: VaultFile, key: string): Promi
   throw new DecryptError('recovery key does not match this vault');
 }
 
+let writerId: string | undefined;
+/** The device id stamped into the sealed meta of every write, so other devices can reject a write from a revoked one. */
+export function setWriterId(id: string | undefined): void { writerId = id; }
+
 /** Bump revision and re-seal meta (meta AAD is bound to the revision). */
 async function commit(file: VaultFile, session: Session, meta: VaultMeta, patch: Partial<VaultFile> = {}): Promise<VaultFile> {
   const rev = file.rev + 1;
+  if (writerId) meta = { ...meta, lastWriter: writerId };
   const next: VaultFile = { ...file, ...patch, rev, updated: Date.now() };
   next.require = { ...meta.require };
   next.meta = await sealJson(session.key, meta, aad.meta(file.id, rev));

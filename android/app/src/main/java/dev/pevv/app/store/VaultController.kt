@@ -11,7 +11,14 @@ import dev.pevv.app.core.DecryptError
 import dev.pevv.app.core.Devices
 import dev.pevv.app.core.Entry
 import dev.pevv.app.core.EntryKinds
+import dev.pevv.app.core.ConflictNote
+import dev.pevv.app.core.DroppedSlot
+import dev.pevv.app.core.Kdf
+import dev.pevv.app.core.Merge
+import dev.pevv.app.core.MergeOptions
 import dev.pevv.app.core.Reconcile
+import dev.pevv.app.core.Rotate
+import dev.pevv.app.core.RotatePlan
 import dev.pevv.app.core.ReconcileAction
 import dev.pevv.app.core.Recovery
 import dev.pevv.app.core.RemoteSource
@@ -29,6 +36,7 @@ import dev.pevv.app.core.jstr
 import dev.pevv.app.core.jstrs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -38,7 +46,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
 
 /** The one holder of the vault key and of decrypted items, and only while unlocked. Locking drops all of it. */
-class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") private val scope: CoroutineScope) {
+class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: CoroutineScope) {
     enum class Status { NONE, LOCKED, SECOND_FACTOR, SET_PASSWORD, UNLOCKED }
 
     data class Pending(val totp: Boolean = false, val passkey: Boolean = false, val usbKey: Boolean = false) {
@@ -50,6 +58,9 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
     private val appCtx = ctx.applicationContext
     private val dir = File(appCtx.filesDir, "pevv").also { it.mkdirs() }
     private val vaultPath = File(dir, "vault.json")
+    /** The copy last known to equal the server's (the base of the three-way merge) and the copy from before a key change. */
+    private val basePath = File(dir, "sync-base.json")
+    private val prevPath = File(dir, "vault-prev.json")
     private val mutex = Mutex()
     private val main = Handler(Looper.getMainLooper())
 
@@ -60,6 +71,12 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
     var totp by mutableStateOf<TotpConfig?>(null); private set
     var warnings by mutableStateOf<List<String>>(emptyList()); private set
     var pending by mutableStateOf(Pending()); private set
+
+    /** Sync status for the screen: unsent changes, conflicts resolved by the last merges, why a copy was refused. */
+    var syncPending by mutableStateOf(false); private set
+    var resolved by mutableStateOf<List<ConflictNote>>(emptyList()); private set
+    var syncRejection by mutableStateOf<String?>(null); private set
+    var needsUnlock by mutableStateOf(false); private set
 
     /** A message code the UI shows once (`device-revoked`, ...). */
     var notice by mutableStateOf<String?>(null)
@@ -73,17 +90,37 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
     private val writeListeners = ArrayList<(VaultFile?) -> Unit>()
     private val lockListeners = ArrayList<() -> Unit>()
     private val statusListeners = ArrayList<(Status) -> Unit>()
+    private val keyListeners = ArrayList<() -> Unit>()
+
+    /** A newer copy that arrived while the vault was locked: it is checked (decrypted, authenticated) at the next unlock. */
+    private var staged: VaultFile? = null
     private var lockRunnable: Runnable? = null
 
     init {
+        VaultEngine.writerId = prefs.deviceId
         val text = try { if (vaultPath.exists()) vaultPath.readText(Charsets.UTF_8) else null } catch (_: Exception) { null }
         if (text != null) {
             try {
                 file = VaultFile.parse(text)
                 status = Status.LOCKED
+                syncPending = loadBase(file!!.id)?.let { Merge.canon(it.json) != Merge.canon(file!!.json) } ?: prefs.syncOn
             } catch (_: Exception) {
             }
         }
+    }
+
+    /** Called when the vault key changes (rotation here, or a rotated copy taken from another device): drop what wraps the old key. */
+    fun onKeyChanged(l: () -> Unit) { keyListeners.add(l) }
+
+    private fun loadBase(id: String): VaultFile? = try {
+        if (!basePath.exists()) null else VaultFile.parse(basePath.readText(Charsets.UTF_8)).takeIf { it.id == id }
+    } catch (_: Exception) { null }
+
+    /** Record that this copy is what the server holds now. */
+    fun markSynced(f: VaultFile) {
+        try { basePath.writeText(f.toText(), Charsets.UTF_8) } catch (_: Exception) { /* the next merge runs without a base; it never loses data */ }
+        val cur = file
+        syncPending = cur != null && Merge.canon(cur.json) != Merge.canon(f.json)
     }
 
     fun onWrite(l: (VaultFile?) -> Unit) { writeListeners.add(l) }
@@ -101,15 +138,18 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
     /** A copy of the vault key for wrapping under the biometric key. The caller wipes it. */
     fun vaultKeyCopy(): ByteArray? = session?.raw?.copyOf()
 
-    private fun persist(f: VaultFile?) {
+    private fun persist(f: VaultFile?, notify: Boolean = true) {
         if (f == null) {
             vaultPath.delete()
+            basePath.delete(); prevPath.delete()
+            staged = null; syncPending = false; resolved = emptyList(); needsUnlock = false
         } else {
+            if (notify) syncPending = true
             val tmp = File(dir, "vault.json.tmp")
             tmp.writeText(f.toText(), Charsets.UTF_8)
             if (!tmp.renameTo(vaultPath)) { vaultPath.delete(); tmp.renameTo(vaultPath) }
         }
-        for (l in writeListeners.toList()) l(f)
+        if (notify) for (l in writeListeners.toList()) l(f)
     }
 
     private fun need(): Triple<VaultFile, Session, VaultMeta> {
@@ -180,9 +220,15 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
         pendingEntries = emptyList()
         pending = Pending()
         entries = list
+        needsUnlock = false
         revealUntil = System.currentTimeMillis() + prefs.revealReauthSeconds * 1000L
         changeStatus(Status.UNLOCKED)
         touch()
+        // A copy that arrived while locked is checked now, with the key in hand (after this call has released the lock).
+        staged?.let { st ->
+            staged = null
+            if (st.id == file?.id) scope.launch { reconcileRemote(st, RemoteSource.CLOUD) }
+        }
     }
 
     suspend fun unlockPassword(password: String) = serial {
@@ -569,41 +615,83 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
         return true
     }
 
+    private fun installFile(f: VaultFile, notify: Boolean) {
+        file = f
+        persist(f, notify)
+        val s = session
+        if (status == Status.UNLOCKED && s != null) {
+            try {
+                val d = VaultEngine.decryptAll(f, s)
+                entries = d.entries; meta = d.meta; totp = d.totp; warnings = d.warnings
+            } catch (_: DecryptError) {
+                lockNow()
+            }
+        }
+    }
+
+    /** The vault key was rotated on another device: keep the old copy as a backup, take the new one and ask for the password again. */
+    private fun takeRotated(remote: VaultFile): Boolean {
+        file?.let { try { prevPath.writeText(it.toText(), Charsets.UTF_8) } catch (_: Exception) { /* best effort */ } }
+        installFile(remote, false)
+        markSynced(remote)
+        lockNow()
+        needsUnlock = true
+        for (l in keyListeners.toList()) l()
+        return true
+    }
+
+    private fun mergeInto(s: Session, local: VaultFile, remote: VaultFile): Boolean {
+        val out = try { Merge.mergeVaults(s, loadBase(local.id), local, remote, MergeOptions(writer = prefs.deviceId)) }
+        catch (_: Exception) { syncRejection = "rejected-key"; return false }
+        when (out.kind) {
+            "same" -> { markSynced(local); return true }
+            "rejected" -> { syncRejection = REJECT_CODE[out.reason] ?: "unknown"; return false }
+            "key-rotated" -> return takeRotated(remote)
+            "kept-local" -> { syncPending = true; return true }
+        }
+        val f = out.file ?: return false
+        installFile(f, out.kind == "merged")
+        if (out.kind == "took-remote") markSynced(f) else syncPending = true
+        if (out.conflicts.isNotEmpty()) resolved = (resolved + out.conflicts).takeLast(50)
+        syncRejection = null
+        checkSelfRevoked()
+        return true
+    }
+
     /**
-     * Fold another copy of this vault into the open one (the rules of `reconcileRemote` in store.ts, see [Reconcile]).
-     * A higher revision replaces items when allowed; the device list is always a union.
+     * Fold another copy of this vault into the open one (the rules of `reconcileRemote` in store.ts, docs/SYNC.md).
+     * Unlocked: a real merge (items one by one, the loser of a same-item conflict kept, device list a union, a copy from a
+     * revoked writer or an older key refused). Locked: nothing is replaced; a locked device cannot tell a genuine newer copy
+     * from a forged one, so it keeps what it has, holds the new one back and checks it at the next unlock.
+     * `takeEntries` is false only for the cloud copy when sync is off: then just the device list is folded in.
      */
     suspend fun reconcileRemote(remote: VaultFile, source: RemoteSource): Boolean = serial {
-        try { VaultFile.validate(remote) } catch (_: IllegalArgumentException) { return@serial false }
+        try { VaultFile.validate(remote); Crypto.validateKdf(remote.kdf) } catch (_: Exception) { return@serial false }
         val local = file
         val unlocked = status == Status.UNLOCKED && session != null
         val action = Reconcile.decide(
             hasLocal = local != null, localId = local?.id ?: "", localRev = local?.rev ?: 0, remoteId = remote.id, remoteRev = remote.rev,
             unlocked = unlocked, source = source, prefSync = prefs.syncOn, revokedLocally = prefs.vaultRevokedLocally(remote.id),
         )
-        when (action) {
-            ReconcileAction.IGNORE -> false
-            ReconcileAction.ADOPT -> {
-                val before = meta?.let { RosterSlice(it.devices, it.revokedDevices) }
-                val ok = adoptRemoteInner(remote)
-                if (ok && before != null && status == Status.UNLOCKED) {
-                    val left = RosterSlice(meta!!.devices, meta!!.revokedDevices)
-                    val merged = Devices.mergeRoster(left, before)
-                    if (!Devices.sameRoster(left, merged)) writeRoster(merged)
-                    checkSelfRevoked()
-                }
-                ok
+        if (prefs.vaultRevokedLocally(remote.id)) return@serial false
+        if (local == null) return@serial if (action == ReconcileAction.ADOPT) adoptRemoteInner(remote) else false
+        if (local.id != remote.id) return@serial false
+        val takeEntries = source == RemoteSource.PEER || prefs.syncOn
+        if (!unlocked) {
+            if (takeEntries && (remote.rev > local.rev || remote.keyEpoch > local.keyEpoch) && Merge.canon(remote.json) != Merge.canon(local.json)) {
+                staged = remote
+                syncPending = true
             }
-            ReconcileAction.MERGE_ROSTER -> {
-                val s = session!!
-                val rm = try { VaultEngine.readMeta(remote, s) } catch (_: DecryptError) { return@serial false }
-                val left = RosterSlice(meta!!.devices, meta!!.revokedDevices)
-                val merged = Devices.mergeRoster(left, RosterSlice(rm.devices, rm.revokedDevices))
-                if (!Devices.sameRoster(left, merged)) writeRoster(merged)
-                checkSelfRevoked()
-                true
-            }
+            return@serial false
         }
+        val s = session!!
+        if (takeEntries) return@serial mergeInto(s, local, remote)
+        val rm = try { VaultEngine.readMeta(remote, s) } catch (_: DecryptError) { return@serial false }
+        val left = RosterSlice(meta!!.devices, meta!!.revokedDevices)
+        val merged = Devices.mergeRoster(left, RosterSlice(rm.devices, rm.revokedDevices))
+        if (!Devices.sameRoster(left, merged)) writeRoster(merged)
+        checkSelfRevoked()
+        true
     }
 
     private fun writeRoster(r: RosterSlice) {
@@ -658,12 +746,51 @@ class VaultController(ctx: Context, val prefs: AppPrefs, @Suppress("unused") pri
         writeMetaInner(f, s, m, mapOf("devices" to Devices.devicesJson(devices), "revokedDevices" to jstrs(revoked)))
     }
 
+    class RotateReport(val codes: List<String>, val recoveryKey: String?, val dropped: List<DroppedSlot>)
+
+    /**
+     * Revoke a device and rotate the vault key, so the old key (and any old copy of the vault that holds it) is worthless.
+     * `password` must be the current master password. Recovery codes and the recovery key are issued again and returned:
+     * show them once. Passkey and USB-key slots are re-wrapped only when their secret is supplied; the others are removed
+     * and listed in `dropped` so the user can add them again.
+     */
+    suspend fun revokeAndRotate(id: String, password: String, prf: Map<String, ByteArray> = emptyMap(), usbKeyFiles: List<String> = emptyList()): RotateReport {
+        revokeDevice(id)
+        return rotateKey(password, prf, usbKeyFiles)
+    }
+
+    suspend fun rotateKey(password: String, prf: Map<String, ByteArray> = emptyMap(), usbKeyFiles: List<String> = emptyList()): RotateReport = serial {
+        val (f, s, _) = need()
+        guardLimiter("pw")
+        try { VaultEngine.unlockWithPassword(f, password).end(); recordLimiter("pw", true) } catch (e: DecryptError) { recordLimiter("pw", false); throw e }
+        val strong = (f.kdf as? Kdf.Argon2id)?.let { it.m > 65_536 } ?: false
+        val hadCodes = f.slots.count { it.type == "recovery-code" }
+        val hadKey = f.slots.any { it.type == "recovery-key" }
+        val codes = List(minOf(hadCodes, Recovery.COUNT)) { Recovery.newRecoveryCode() }
+        val key = if (hadKey) Recovery.newRecoveryKey() else null
+        val res = Rotate.rotateVaultKey(f, s, RotatePlan(password, Crypto.newKdf(strong), codes, key, prf, usbKeyFiles, dropUnknown = true))
+        session?.end()
+        session = res.session
+        file = res.file
+        persist(res.file)
+        val d = VaultEngine.decryptAll(res.file, res.session)
+        entries = d.entries; meta = d.meta; totp = d.totp; warnings = d.warnings
+        for (l in keyListeners.toList()) l()
+        RotateReport(codes, key, res.dropped)
+    }
+
     /** User-confirmed association of an Android app with a vault login (autofill). Sealed in the meta, ignored by other clients. */
     suspend fun linkApp(pkg: String, entryId: String) = serial {
         val (f, s, m) = need()
         val cur = (m.json["androidAppLinks"] as? JsonObject) ?: JsonObject(emptyMap())
         val next = JsonObject(LinkedHashMap(cur) + (pkg to jstr(entryId)))
         writeMetaInner(f, s, m, mapOf("androidAppLinks" to next))
+    }
+
+    companion object {
+        private val REJECT_CODE = mapOf(
+            "revoked-writer" to "rejected-revoked", "stale-key" to "rejected-stale-key", "key-mismatch" to "rejected-key", "other-vault" to "rejected-vault",
+        )
     }
 
     fun appLinks(): Map<String, String> =

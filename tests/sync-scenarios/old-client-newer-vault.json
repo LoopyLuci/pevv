@@ -1,0 +1,198 @@
+{
+ "name": "old-client-newer-vault",
+ "description": "A vault with fields, a slot kind and item fields an older client does not know: an edit and a merge keep every one of them.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": [],
+      "futureField": {
+       "deep": [
+        1,
+        2,
+        {
+         "x": true
+        }
+       ]
+      }
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ],
+   "slots": [
+    {
+     "id": "s-hw",
+     "type": "hw-token",
+     "wrapped": {
+      "iv": "AAAAAAAAAAAAAAAA",
+      "ct": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+     },
+     "vendor": "future"
+    }
+   ],
+   "top": {
+    "x-future": {
+     "a": 1,
+     "list": [
+      "q"
+     ]
+    }
+   },
+   "meta": {
+    "futureMeta": {
+     "mode": "v9"
+    },
+    "futureList": [
+     3,
+     2,
+     1
+    ]
+   }
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "top",
+   "device": "bbbbbbbb",
+   "patch": {
+    "x-future": null
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i2",
+   "at": 2000,
+   "set": {
+    "notes": "edited by the older client"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2100,
+   "set": {
+    "notes": "edited by the newer client"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3000,
+   "expect": {
+    "kind": "merged"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3100,
+   "expect": {
+    "kind": "took-remote"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb"
+   ]
+  },
+  {
+   "t": "top",
+   "device": "aaaaaaaa",
+   "key": "x-future",
+   "equals": {
+    "a": 1,
+    "list": [
+     "q"
+    ]
+   }
+  },
+  {
+   "t": "slotTypes",
+   "device": "bbbbbbbb",
+   "equals": [
+    "password",
+    "hw-token"
+   ]
+  },
+  {
+   "t": "meta",
+   "device": "bbbbbbbb",
+   "key": "futureMeta",
+   "equals": {
+    "mode": "v9"
+   }
+  },
+  {
+   "t": "meta",
+   "device": "aaaaaaaa",
+   "key": "futureList",
+   "equals": [
+    3,
+    2,
+    1
+   ]
+  },
+  {
+   "t": "field",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "field": "futureField",
+   "equals": {
+    "deep": [
+     1,
+     2,
+     {
+      "x": true
+     }
+    ]
+   }
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "field": "notes",
+   "equals": "edited by the older client"
+  }
+ ]
+}

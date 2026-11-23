@@ -1,0 +1,202 @@
+{
+ "name": "three-way-order-1",
+ "description": "Three devices, merged A<-B, A<-C, then everyone pulls from A.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i3",
+     "data": {
+      "type": "login",
+      "title": "Three",
+      "site": "https://three.example.test",
+      "username": "user",
+      "password": "pw-Three",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i4",
+     "data": {
+      "type": "login",
+      "title": "Four",
+      "site": "https://four.example.test",
+      "username": "user",
+      "password": "pw-Four",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "cccccccc"
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000,
+   "set": {
+    "title": "One (A)"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i2",
+   "at": 2100,
+   "set": {
+    "title": "Two (B)"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "cccccccc",
+   "id": "i3",
+   "at": 2200,
+   "set": {
+    "title": "Three (C)"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i4",
+   "at": 2300,
+   "set": {
+    "notes": "A note"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "cccccccc",
+   "id": "i4",
+   "at": 2500,
+   "set": {
+    "notes": "C note"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3000
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "cccccccc",
+   "now": 3100
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3200
+  },
+  {
+   "op": "sync",
+   "device": "cccccccc",
+   "with": "aaaaaaaa",
+   "now": 3300
+  }
+ ],
+ "asserts": [
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb",
+    "cccccccc"
+   ]
+  },
+  {
+   "t": "count",
+   "device": "aaaaaaaa",
+   "n": 4
+  },
+  {
+   "t": "field",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "field": "title",
+   "equals": "One (A)"
+  },
+  {
+   "t": "field",
+   "device": "cccccccc",
+   "id": "i2",
+   "field": "title",
+   "equals": "Two (B)"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "field": "title",
+   "equals": "Three (C)"
+  },
+  {
+   "t": "field",
+   "device": "bbbbbbbb",
+   "id": "i4",
+   "field": "notes",
+   "equals": "C note"
+  },
+  {
+   "t": "conflicts",
+   "device": "aaaaaaaa",
+   "id": "i4",
+   "n": 1
+  }
+ ]
+}

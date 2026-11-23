@@ -15,6 +15,9 @@ val ENTRY_TYPES = listOf("login", "env", "note", "apikey", "card", "ssh", "ident
 class VaultFile(val json: JsonObject) {
     val id: String get() = json.str("id") ?: ""
     val rev: Long get() = json.long("rev") ?: 0
+
+    /** Number of key rotations (absent = 0). */
+    val keyEpoch: Long get() = json.long("keyEpoch") ?: 0
     val created: Long get() = json.long("created") ?: 0
     val updated: Long get() = json.long("updated") ?: 0
     val kdf: Kdf get() = Kdf.from(json["kdf"])
@@ -40,8 +43,11 @@ class VaultFile(val json: JsonObject) {
         /** The same checks as `validateFile`: unknown slot types are kept and ignored. */
         fun validate(f: VaultFile) {
             val j = f.json
-            val ok = j.str("format") == VAULT_FORMAT && j.long("v") == 1L && j.str("id") != null && j["slots"] is JsonArray && j["entries"] is JsonArray
+            val v = j.long("v")
+            val ok = j.str("format") == VAULT_FORMAT && (v == 1L || v == 2L) && j.str("id") != null && j["slots"] is JsonArray && j["entries"] is JsonArray
             if (!ok) throw IllegalArgumentException("not a PEVV vault file")
+            // v2 is a vault whose key was rotated: it must say so, so a stale copy can be told apart from it.
+            if (v == 2L && (j.long("keyEpoch") ?: 0L) < 1L) throw IllegalArgumentException("not a PEVV vault file")
             for (s in j.arr("slots")!!) {
                 val o = s as? JsonObject
                 if (o == null || o.str("id") == null || o.str("type") == null) throw IllegalArgumentException("not a PEVV vault file")

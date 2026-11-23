@@ -9,6 +9,12 @@ export type EntryType = (typeof ENTRY_TYPES)[number];
 export interface HistoryItem { at: number; field: string; value: string }
 
 /**
+ * The losing side of a sync conflict, kept inside the winning item (sealed with it). Optional and ignored by older
+ * clients, which keep it as an unknown field. See docs/SYNC.md.
+ */
+export interface ConflictCopy { at: number; ver: number; data: Record<string, unknown> }
+
+/**
  * Desktop auto-type for a login: which windows it may type into, and what to type. Optional and
  * ignored by every older client (the entry is one sealed JSON object and unknown fields are kept
  * as they are). A login with no `autoType` is never typed into any window, whatever its `site`.
@@ -78,6 +84,8 @@ export interface EntryData {
   created: number;
   updated: number;
   history: HistoryItem[];
+  /** Versions that lost a sync conflict on this item, newest first (at most 5). */
+  conflicts?: ConflictCopy[] | undefined;
 }
 
 export interface Entry extends EntryData { id: string; ver: number }
@@ -117,6 +125,8 @@ export interface VaultMeta {
   devices: VaultDevice[];
   /** Device ids removed by the owner. Those copies wipe themselves on the next unlock. */
   revokedDevices: string[];
+  /** Device id that wrote this revision (optional; lets other devices reject a write from a revoked one). */
+  lastWriter?: string | undefined;
 }
 
 export type DeviceKind = 'desktop' | 'phone' | 'tablet' | 'unknown';
@@ -133,12 +143,15 @@ export interface VaultDevice {
 
 export interface VaultFile {
   format: typeof VAULT_FORMAT;
-  v: 1;
+  /** 1 = original. 2 = the vault key was rotated at least once (older clients refuse it instead of corrupting it). */
+  v: 1 | 2;
   id: string;
   created: number;
   updated: number;
   /** Monotonic revision, bumped on every write (sync uses last-writer-wins on rev). */
   rev: number;
+  /** Number of key rotations (absent = 0). Required and >= 1 when `v` is 2. */
+  keyEpoch?: number | undefined;
   kdf: KdfParams;
   slots: Slot[];
   passkeys: PasskeyRecord[];

@@ -1,0 +1,138 @@
+{
+ "name": "offline-different-items",
+ "description": "Two devices edit different items while offline; both end with both edits and the new item.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000,
+   "set": {
+    "title": "One (A)"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i2",
+   "at": 2100,
+   "set": {
+    "notes": "from B"
+   }
+  },
+  {
+   "op": "add",
+   "device": "bbbbbbbb",
+   "id": "i3",
+   "at": 2200,
+   "data": {
+    "type": "login",
+    "title": "Three",
+    "site": "https://three.example.test",
+    "username": "user",
+    "password": "pw-Three",
+    "tags": [],
+    "favorite": false,
+    "created": 2200,
+    "updated": 2200,
+    "history": []
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3000,
+   "expect": {
+    "kind": "merged",
+    "conflicts": []
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3100,
+   "expect": {
+    "kind": "took-remote"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb"
+   ]
+  },
+  {
+   "t": "count",
+   "device": "aaaaaaaa",
+   "n": 3
+  },
+  {
+   "t": "field",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "field": "title",
+   "equals": "One (A)"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "field": "notes",
+   "equals": "from B"
+  },
+  {
+   "t": "conflicts",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "n": 0
+  }
+ ]
+}

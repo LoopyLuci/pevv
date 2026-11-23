@@ -493,7 +493,7 @@ export function watchtower(entries: Entry[], reuse: Map<string, string[]>, now =
 export const AUDIT_EVENTS = [
   'unlock', 'unlock-passkey', 'unlock-usb-key', 'unlock-recovery', 'lock', 'create', 'edit', 'delete', 'restore', 'reveal', 'copy', 'export', 'import', 'export-env', 'import-env',
   'password-change', 'passkey-add', 'passkey-remove', 'passkey-rename', 'totp-on', 'totp-off', 'grant', 'revoke', 'env-link', 'recovery-new', 'folder',
-  'device-rename', 'device-revoke', 'usb-key-add', 'usb-key-remove',
+  'device-rename', 'device-revoke', 'usb-key-add', 'usb-key-remove', 'key-rotate',
   'autotype', 'cli-run', 'cli-env', 'passkey-provider',
 ] as const;
 export type AuditEvent = (typeof AUDIT_EVENTS)[number];

@@ -73,7 +73,8 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first for anything non-trivial
     `capabilities/`), the browser link needs user-approved pairing, HMAC with a counter and an extension-id allow-list
     (`extension-ids.json`), and the desktop side never sees decrypted vault data it was not asked for.
 11. **Secrets are masked, copies are cleared, reveals need recent re-authentication.** Do not log secret values or put them in error text.
-12. **Do not weaken or delete a test to get green.** Fix the code, or explain in the PR why the expectation was wrong.
+12. **Sync never loses data** ([docs/SYNC.md](docs/SYNC.md)). Merging keeps the loser of a conflict inside the item and keeps unknown fields; cloud writes go through `pevv_put` (revision compare-and-swap) and re-merge on conflict; a locked device never replaces its copy with a remote file (it stages it and verifies it at unlock); a copy with a lower `keyEpoch` or from a revoked writer is refused. `v: 2` and `keyEpoch` appear only through key rotation, which re-wraps every slot or removes it. The TypeScript and Kotlin merge/rotation must stay byte-identical (`tests/sync-scenarios`).
+13. **Do not weaken or delete a test to get green.** Fix the code, or explain in the PR why the expectation was wrong.
 
 ## Where tests live
 
@@ -86,6 +87,7 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first for anything non-trivial
 | Extension worker, core, packaging | `tests/unit/pevv.extension.core.test.ts`, `pevv.extension.test.ts` |
 | Desktop webview glue, link, CLI, auto-type, passkeys | `tests/unit/pevv.desktop.test.ts`, `pevv.link.test.ts`, `pevv.cli.test.ts`, `pevv.autotype.test.ts`, `pevv.native.test.ts`, `pevv.passkeyProvider.test.ts` |
 | Android (Kotlin core, golden vectors from TypeScript, autofill matching) | `android/app/src/test/java/dev/pevv/app/*Test.kt`; `tests/unit/pevv.android.test.ts` opens a Kotlin-made vault with the TypeScript code |
+| Sync merge, rotation, staging (TS and Kotlin share scenarios and goldens) | `tests/unit/pevv.sync-scenarios.test.ts`, `pevv.sync-store.test.ts`, `android/.../SyncScenarioTest.kt`; SQL: `npm run test:sql` (`tests/sql/`) |
 | Rust shell | `#[cfg(test)]` modules in `desktop/src-tauri/src/*.rs` (`cargo test`) |
 | Web e2e (real browser, virtual authenticator) | `tests/e2e/pevv.spec.ts` |
 | Extension e2e | `tests/e2e-extension/*.spec.ts`, `tests/e2e-extension/firefox/` |

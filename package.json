@@ -32,6 +32,7 @@
     "test:e2e:extension": "playwright test -c playwright.extension.config.ts",
     "test:extension:firefox": "node tests/e2e-extension/firefox/pevv-firefox.mjs",
     "lint": "eslint .",
+    "test:sql": "node scripts/test-sql.mjs",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri"
   },

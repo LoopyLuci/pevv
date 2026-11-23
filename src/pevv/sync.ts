@@ -4,9 +4,10 @@
  * your own Supabase project (docs/SYNC_SELF_HOSTING.md). Remote copies are adopted when
  * they are the same vault with a higher revision (last writer wins on `rev`).
  */
-import { useCloudFiles } from './host/cloud';
+import { onCloudConflict, onCloudPushed, useCloudFiles } from './host/cloud';
 import type { VaultFile } from './model';
-import { onVaultWrite, reconcileRemote, setPrefs, usePevv } from './store';
+import { markSynced, onVaultWrite, reconcileRemote, setPrefs, usePevv } from './store';
+import { keyEpoch } from './merge';
 import { validateFile } from './vault';
 import { vaultRevokedLocally } from './devices';
 
@@ -40,7 +41,7 @@ function mirror(file: VaultFile | null): void {
       const remote = JSON.parse(existing) as VaultFile;
       validateFile(remote);
       // A desktop that still has the pre-pair copy must not overwrite the phone.
-      if (remote.id === file.id && remote.rev > file.rev) return;
+      if (remote.id === file.id && (keyEpoch(remote) > keyEpoch(file) || (keyEpoch(remote) === keyEpoch(file) && remote.rev > file.rev))) return;
     } catch { /* replace a file that is not a vault */ }
   }
   if (body === lastWritten || existing === body) return;
@@ -73,6 +74,18 @@ export function startVaultSync(): () => void {
   if (started) return () => undefined;
   started = true;
   const offWrite = onVaultWrite((f) => mirror(f));
+  // The server accepted our copy: it is now the base of the next three-way merge.
+  const offPushed = onCloudPushed((path, body) => {
+    if (path !== SYNC_PATH) return;
+    try { const f = JSON.parse(body) as VaultFile; validateFile(f); markSynced(f); } catch { /* not a vault */ }
+  });
+  // Our write lost the compare-and-swap: another device wrote first. Merge its copy in, then the merged copy is written again.
+  const offConflict = onCloudConflict((path) => {
+    if (path !== SYNC_PATH) return;
+    lastWritten = '';
+    absorbed = '';
+    inbound();
+  });
   let prevFiles = useCloudFiles.getState().files;
   let prevSync = usePevv.getState().prefs.sync;
   const offFiles = useCloudFiles.subscribe((s) => {
@@ -89,5 +102,5 @@ export function startVaultSync(): () => void {
   });
   if (prevSync) void useCloudFiles.getState().initFiles().then(() => { inbound(); mirror(usePevv.getState().file); });
   else void useCloudFiles.getState().initFiles().then(() => inbound());
-  return () => { offWrite(); offFiles(); offPrefs(); started = false; };
+  return () => { offWrite(); offPushed(); offConflict(); offFiles(); offPrefs(); started = false; };
 }

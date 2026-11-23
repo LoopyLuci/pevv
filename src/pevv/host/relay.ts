@@ -12,6 +12,7 @@
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
 import { b64url, randomBytes } from '../bytes';
 import { SYNC_ANON_KEY, SYNC_URL, syncConfigured } from './config';
+import { currentAccount, getClient } from './cloud';
 export const FRAME = 48_000;
 
 export function newTransferToken(): string {
@@ -53,6 +54,19 @@ function relay(): Promise<SupabaseClient | null> {
     throw e;
   });
   return relayP;
+}
+
+/**
+ * The live device lane (`pevv:d:<vaultId>`) is limited by the server to sessions that own a synced copy of that vault
+ * (supabase/migrations/0002_pevv_hardening.sql), so a signed-in device uses its account session. Without an account it
+ * falls back to the anonymous relay session, which works on servers that still run the open lane (`open_roster`).
+ */
+async function rosterClient(): Promise<SupabaseClient | null> {
+  if (currentAccount()) {
+    const c = await getClient();
+    if (c) return c;
+  }
+  return relay();
 }
 
 function subscribe(ch: RealtimeChannel): Promise<void> {
@@ -211,7 +225,7 @@ export interface RosterLink {
  */
 export async function joinRoster(vaultId: string, onFile: (body: string) => void): Promise<RosterLink> {
   if (!/^[0-9a-f-]{8,64}$/i.test(vaultId)) throw new Error('roster-id');
-  const client = await relay();
+  const client = await rosterClient();
   if (!client) throw new Error('qr-nosync');
   const ch = client.channel(rosterTopic(vaultId), { config: { private: true, broadcast: { self: false, ack: false } } });
   let current = '';

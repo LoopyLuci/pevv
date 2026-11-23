@@ -131,8 +131,12 @@ export async function aesKeyFromRaw(raw: Uint8Array): Promise<CryptoKey> {
   return subtle().importKey('raw', toBytes(raw), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
-export async function seal(key: CryptoKey, plain: Uint8Array, aad: string): Promise<Sealed> {
-  const iv = randomBytes(12);
+/**
+ * `iv` is for tests that need byte-identical output (golden vectors). Production callers never pass it:
+ * a fresh random 96-bit IV per seal is invariant 5 in AGENTS.md.
+ */
+export async function seal(key: CryptoKey, plain: Uint8Array, aad: string, iv: Bytes = randomBytes(12)): Promise<Sealed> {
+  if (iv.length !== 12) throw new Error('IV must be 96 bits');
   const ct = await subtle().encrypt({ name: 'AES-GCM', iv, additionalData: utf8(aad), tagLength: 128 }, key, toBytes(plain));
   return { iv: b64(iv), ct: b64(new Uint8Array(ct)) };
 }
@@ -154,8 +158,8 @@ export async function open(key: CryptoKey, s: Sealed, aad: string): Promise<Byte
   }
 }
 
-export async function sealJson(key: CryptoKey, value: unknown, aad: string): Promise<Sealed> {
-  return seal(key, utf8(JSON.stringify(value)), aad);
+export async function sealJson(key: CryptoKey, value: unknown, aad: string, iv?: Bytes): Promise<Sealed> {
+  return seal(key, utf8(JSON.stringify(value)), aad, iv);
 }
 
 export async function openJson<T>(key: CryptoKey, s: Sealed, aad: string): Promise<T> {
@@ -185,8 +189,8 @@ export function newVaultKey(): Bytes {
 }
 
 /** Wrap the raw vault key under a KEK for one slot. */
-export async function wrapVaultKey(kek: CryptoKey, vaultKey: Uint8Array, vaultId: string, slotId: string): Promise<Sealed> {
-  return seal(kek, vaultKey, aad.slot(vaultId, slotId));
+export async function wrapVaultKey(kek: CryptoKey, vaultKey: Uint8Array, vaultId: string, slotId: string, iv?: Bytes): Promise<Sealed> {
+  return seal(kek, vaultKey, aad.slot(vaultId, slotId), iv);
 }
 
 export async function unwrapVaultKey(kek: CryptoKey, wrapped: Sealed, vaultId: string, slotId: string): Promise<Bytes> {

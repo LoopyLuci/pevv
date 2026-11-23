@@ -77,10 +77,13 @@ The desktop app unlocks with those passkeys through the operating system, so it 
 2. Open the web app on device B, "I already have a vault", sign in with the same email, "Check again".
 3. In the Supabase table editor, `pevv_blobs.body` must be unreadable JSON (`"sealed":{"iv":..., "ct":...}`), never plaintext.
 
+## Hardened schema
+
+Also apply `supabase/migrations/0002_pevv_hardening.sql` (revision compare-and-swap, history, soft delete, size and rate limits, Realtime topic policies). What it does and how to test it: [SYNC.md](SYNC.md). Note that it limits the live device lane to accounts that own a synced copy of the vault.
+
 ## Privacy and abuse notes
 
 - Row-level security is forced on `pevv_blobs`; the anon role has no grants on it.
-- The Realtime topics are unguessable random tokens, and messages are not stored. Any signed-in (including anonymous) session can
-  subscribe to a topic it knows; the content is ciphertext. Rate-limit anonymous sign-ins in your Supabase auth settings.
+- The Realtime topics are unguessable random tokens, and messages are not stored. With migration 0002 a session needs a valid topic shape, and the live device lane needs a synced copy of that vault; the content is ciphertext. Rate-limit anonymous sign-ins in your Supabase auth settings.
 - Deleting an account deletes its rows (`on delete cascade`).
 - To disable sync again: rebuild without the two variables. Existing local vaults keep working.

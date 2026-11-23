@@ -1,0 +1,155 @@
+{
+ "name": "delete-vs-edit",
+ "description": "Deleted on one device and edited on the other: the edit wins and the item stays. A plain delete still deletes.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i3",
+     "data": {
+      "type": "login",
+      "title": "Three",
+      "site": "https://three.example.test",
+      "username": "user",
+      "password": "pw-Three",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "delete",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "at": 2100,
+   "set": {
+    "title": "One (edited on B)"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "at": 2200,
+   "set": {
+    "title": "Two (edited on A)"
+   }
+  },
+  {
+   "op": "delete",
+   "device": "bbbbbbbb",
+   "id": "i2",
+   "at": 2300
+  },
+  {
+   "op": "delete",
+   "device": "aaaaaaaa",
+   "id": "i3",
+   "at": 2400
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3000,
+   "expect": {
+    "kind": "merged",
+    "conflicts": [
+     "i1/deleted-vs-edited",
+     "i2/deleted-vs-edited"
+    ]
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3100,
+   "expect": {
+    "kind": "took-remote"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb"
+   ]
+  },
+  {
+   "t": "count",
+   "device": "aaaaaaaa",
+   "n": 2
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "title",
+   "equals": "One (edited on B)"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i2",
+   "field": "title",
+   "equals": "Two (edited on A)"
+  },
+  {
+   "t": "absent",
+   "device": "bbbbbbbb",
+   "id": "i3"
+  }
+ ]
+}

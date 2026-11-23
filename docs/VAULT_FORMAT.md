@@ -1,4 +1,4 @@
-# Vault file format (version 1)
+# Vault file format (version 1; version 2 only after a key rotation)
 
 The vault is one JSON document, `VaultFile` (`src/pevv/model.ts`), validated by `validateFile` (`src/pevv/vault.ts`). It is what is
 stored in `localStorage` / `chrome.storage.local` / the desktop `vault.json`, mirrored by sync, moved by the vault QR, and the
@@ -28,6 +28,14 @@ payload of portable export v2. **It must stay readable by every released client.
 ```
 
 `Sealed` is `{ "iv": "<b64, 12 bytes>", "ct": "<b64, ciphertext + 16-byte GCM tag>" }`.
+
+## Fields added for sync and key rotation
+
+- `v`: 1, or 2 after a key rotation. `keyEpoch` (integer >= 1, only with `v: 2`) counts rotations; a copy with a lower epoch is refused by sync.
+- Inside the sealed meta: `lastWriter` (device id of the last writer, used to refuse writes from revoked devices).
+- Inside a sealed item: `conflicts[]` of `{at, ver, data}`, the versions that lost a merge (at most 5). Older clients keep them untouched.
+
+See [SYNC.md](SYNC.md).
 
 ## What is plaintext, and what is not
 

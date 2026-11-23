@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +45,7 @@ import dev.pevv.app.core.Import
 import dev.pevv.app.core.ImportResult
 import dev.pevv.app.core.Json
 import dev.pevv.app.core.Recovery
+import dev.pevv.app.core.Entry
 import dev.pevv.app.core.Totp
 import dev.pevv.app.core.TotpConfig
 import dev.pevv.app.core.VaultEngine
@@ -173,6 +177,7 @@ fun DevicesScreen(onBack: () -> Unit) {
     val tablet = ctx.resources.configuration.smallestScreenWidthDp >= 600
     var name by remember { mutableStateOf(app.prefs.customDeviceName) }
     var revoke by remember { mutableStateOf<String?>(null) }
+    var rotated by remember { mutableStateOf<VaultController.RotateReport?>(null) }
     val op = rememberOp()
     val run = op.runner()
     val devices = ctl.meta?.devices ?: emptyList()
@@ -195,7 +200,43 @@ fun DevicesScreen(onBack: () -> Unit) {
         }
     }
     revoke?.let { id ->
-        ConfirmDialog(stringResource(R.string.revoke_title), stringResource(R.string.revoke_body), stringResource(R.string.revoke), { revoke = null; run { ctl.revokeDevice(id) } }, { revoke = null }, danger = true)
+        var rotate by remember { mutableStateOf(true) }
+        var pw by remember { mutableStateOf("") }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { revoke = null }, title = { Text(stringResource(R.string.revoke_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.revoke_body))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(rotate, { rotate = it })
+                        Text(stringResource(R.string.remove_rotate))
+                    }
+                    Text(stringResource(R.string.rotate_why), style = MaterialTheme.typography.bodySmall)
+                    if (rotate) SecretField(pw, { pw = it }, stringResource(R.string.rotate_password))
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !rotate || pw.isNotEmpty(), onClick = {
+                    revoke = null
+                    if (rotate) run { rotated = ctl.revokeAndRotate(id, pw) } else run { ctl.revokeDevice(id) }
+                }) { Text(stringResource(R.string.revoke), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { revoke = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    rotated?.let { r ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { }, title = { Text(stringResource(R.string.rotate_new_codes)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.rotate_done))
+                    if (r.codes.isNotEmpty()) Text(r.codes.joinToString("\n"), style = MaterialTheme.typography.bodyMedium)
+                    r.recoveryKey?.let { Text(stringResource(R.string.rotate_new_key)); Text(it, style = MaterialTheme.typography.bodySmall) }
+                    if (r.dropped.isNotEmpty()) Text(stringResource(R.string.rotate_dropped, r.dropped.joinToString(", ") { it.name ?: it.type }))
+                }
+            },
+            confirmButton = { TextButton(onClick = { rotated = null }) { Text(stringResource(R.string.rotate_saved)) } },
+        )
     }
 }
 
@@ -352,6 +393,7 @@ fun SyncScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val app = ctx.pevv
     val sync = app.sync
+    val ctl = app.vault
     var on by remember { mutableStateOf(app.prefs.syncOn) }
     val op = rememberOp()
     val run = op.runner()
@@ -364,15 +406,82 @@ fun SyncScreen(onBack: () -> Unit) {
                 Done(stringResource(R.string.signed_in_as, acc.email ?: ""))
                 Row2(stringResource(R.string.sync_this_vault)) { Switch(on, { v -> on = v; run { sync.setSync(v) } }) }
                 if (sync.lastSyncAt > 0) Text(stringResource(R.string.last_sync, java.text.DateFormat.getDateTimeInstance().format(java.util.Date(sync.lastSyncAt))), style = MaterialTheme.typography.bodySmall)
+                if (sync.lastSyncAt <= 0) Text(stringResource(R.string.sync_never), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(if (ctl.syncPending) R.string.sync_pending_yes else R.string.sync_pending_no), style = MaterialTheme.typography.bodySmall)
+                if (ctl.needsUnlock) Text(stringResource(R.string.sync_needs_unlock), color = MaterialTheme.colorScheme.error)
                 SecondaryButton(stringResource(R.string.sync_now), { run { sync.pull() } })
                 SecondaryButton(stringResource(R.string.sign_out), { run { sync.signOut() } })
             }
-            sync.error?.let { Text(stringResource(R.string.sync_error, it), color = MaterialTheme.colorScheme.error) }
+            (ctl.syncRejection ?: sync.error)?.let { code -> Text(syncErrorText(code), color = MaterialTheme.colorScheme.error) }
+            if (acc != null) SyncConflicts(ctl)
             if (op.busy) Busy()
             op.error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
         }
     }
 }
+
+/** Plain-language text for a sync error code (the codes of the web client's syncStatus.ts, plus the transport ones). */
+@Composable
+private fun syncErrorText(code: String): String = when (code) {
+    "offline" -> stringResource(R.string.sync_err_offline)
+    "rate-limited" -> stringResource(R.string.sync_err_rate)
+    "too-large" -> stringResource(R.string.sync_err_too_large)
+    "rejected-revoked" -> stringResource(R.string.sync_err_revoked)
+    "rejected-stale-key" -> stringResource(R.string.sync_err_stale_key)
+    "rejected-key" -> stringResource(R.string.sync_err_key)
+    "rejected-vault" -> stringResource(R.string.sync_err_vault)
+    "denied", "http-401", "http-403" -> stringResource(R.string.sync_err_denied)
+    "rev-regressed" -> stringResource(R.string.sync_err_regress)
+    "unknown" -> stringResource(R.string.sync_err_unknown)
+    else -> stringResource(R.string.sync_error, code)
+}
+
+/** Conflicts resolved by the last merges, and the versions that lost, which stay inside their items. */
+@Composable
+private fun SyncConflicts(ctl: VaultController) {
+    var open by remember { mutableStateOf(false) }
+    var kept by remember { mutableStateOf(false) }
+    var values by remember { mutableStateOf(false) }
+    val fmt = remember { java.text.DateFormat.getDateTimeInstance() }
+    SectionTitle(stringResource(R.string.sync_conflicts_title, ctl.resolved.size))
+    TextButton(onClick = { open = !open }) { Text(stringResource(if (open) R.string.hide else R.string.show)) }
+    if (open) {
+        if (ctl.resolved.isEmpty()) Text(stringResource(R.string.sync_conflicts_none), style = MaterialTheme.typography.bodySmall)
+        for (c in ctl.resolved) {
+            val title = c.title.ifBlank { c.id.take(6) }
+            Text(
+                if (c.kind == "edited-both") stringResource(R.string.sync_conflict_edited, title, stringResource(if (c.kept == "local") R.string.sync_kept_here else R.string.sync_kept_other))
+                else stringResource(R.string.sync_conflict_deleted, title),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+    SectionTitle(stringResource(R.string.sync_kept_title))
+    TextButton(onClick = { kept = !kept }) { Text(stringResource(if (kept) R.string.hide else R.string.show)) }
+    if (kept) {
+        Text(stringResource(R.string.sync_kept_intro), style = MaterialTheme.typography.bodySmall)
+        val withKept = ctl.entries.filter { keptVersions(it).isNotEmpty() }
+        if (withKept.isEmpty()) Text(stringResource(R.string.sync_kept_none), style = MaterialTheme.typography.bodySmall)
+        TextButton(onClick = { values = !values }) { Text(stringResource(if (values) R.string.hide else R.string.show) + " " + stringResource(R.string.sync_kept_title).lowercase()) }
+        for (e in withKept) {
+            Text(e.title.ifBlank { e.id.take(6) }, style = MaterialTheme.typography.titleSmall)
+            for (v in keptVersions(e)) {
+                val at = (v["at"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toLongOrNull() ?: 0L
+                Text(stringResource(R.string.sync_version_at, if (at > 0) fmt.format(java.util.Date(at)) else "-"), style = MaterialTheme.typography.bodySmall)
+                val data = v["data"] as? JsonObject ?: continue
+                for ((k, x) in data) {
+                    if (k in setOf("history", "updated", "created", "conflicts")) continue
+                    if (e.data[k] == x) continue
+                    val text = (x as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: x.toString()
+                    val secret = Regex("pass|key|pin|cvv|number|secret|totp|value", RegexOption.IGNORE_CASE).containsMatchIn(k)
+                    Text("  $k: " + if (values || !secret) text else "••••••••", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+private fun keptVersions(e: Entry): List<JsonObject> = (e.data["conflicts"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { it as? JsonObject } ?: emptyList()
 
 /* ───────────────────────── import / export ───────────────────────── */
 

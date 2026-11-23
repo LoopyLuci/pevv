@@ -84,6 +84,8 @@ tasks.withType<Test>().configureEach {
     // The golden tests run real Argon2id (64 MiB) a few times.
     maxHeapSize = "1g"
     systemProperty("pevv.vectors", layout.projectDirectory.dir("src/test/resources/vectors").asFile.absolutePath)
+    // The cross-client sync scenarios are shared with the TypeScript tests (tests/sync-scenarios at the repo root).
+    systemProperty("pevv.scenarios", layout.projectDirectory.dir("../../tests/sync-scenarios").asFile.absolutePath)
     // Set PEVV_WRITE_FIXTURES=1 to refresh the Kotlin-made fixture the TypeScript tests read back.
     environment("PEVV_WRITE_FIXTURES", System.getenv("PEVV_WRITE_FIXTURES") ?: "")
 }

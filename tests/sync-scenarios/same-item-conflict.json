@@ -1,0 +1,140 @@
+{
+ "name": "same-item-conflict",
+ "description": "Both devices edit the same item: the newest edit wins and the other version is kept inside it.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    },
+    {
+     "id": "i2",
+     "data": {
+      "type": "login",
+      "title": "Two",
+      "site": "https://two.example.test",
+      "username": "user",
+      "password": "pw-Two",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ]
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "edit",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "at": 2000,
+   "set": {
+    "password": "from-A"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "at": 2200,
+   "set": {
+    "password": "from-B"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3000,
+   "expect": {
+    "kind": "merged",
+    "conflicts": [
+     "i1/edited-both"
+    ]
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3100,
+   "expect": {
+    "kind": "took-remote"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb"
+   ]
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "password",
+   "equals": "from-B"
+  },
+  {
+   "t": "conflicts",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "n": 1
+  },
+  {
+   "t": "conflicts",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "n": 1
+  },
+  {
+   "t": "field",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "field": "conflicts",
+   "equals": [
+    {
+     "at": 2000,
+     "ver": 2,
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "from-A",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 2000,
+      "history": []
+     }
+    }
+   ]
+  }
+ ]
+}

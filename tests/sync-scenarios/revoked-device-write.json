@@ -1,0 +1,160 @@
+{
+ "name": "revoked-device-write",
+ "description": "A write from a device the roster has revoked is rejected; a write from a good device is merged.",
+ "vaultId": "00112233445566778899aabb",
+ "steps": [
+  {
+   "op": "create",
+   "device": "aaaaaaaa",
+   "at": 1000,
+   "items": [
+    {
+     "id": "i1",
+     "data": {
+      "type": "login",
+      "title": "One",
+      "site": "https://one.example.test",
+      "username": "user",
+      "password": "pw-One",
+      "tags": [],
+      "favorite": false,
+      "created": 1000,
+      "updated": 1000,
+      "history": []
+     }
+    }
+   ],
+   "meta": {
+    "devices": [
+     {
+      "id": "aaaaaaaa",
+      "name": "A",
+      "kind": "phone",
+      "added": 900,
+      "seen": 1000,
+      "agent": "Test"
+     },
+     {
+      "id": "bbbbbbbb",
+      "name": "B",
+      "kind": "phone",
+      "added": 900,
+      "seen": 1000,
+      "agent": "Test"
+     },
+     {
+      "id": "cccccccc",
+      "name": "C",
+      "kind": "phone",
+      "added": 900,
+      "seen": 1000,
+      "agent": "Test"
+     }
+    ]
+   }
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "bbbbbbbb"
+  },
+  {
+   "op": "copy",
+   "from": "aaaaaaaa",
+   "to": "cccccccc"
+  },
+  {
+   "op": "revoke",
+   "device": "aaaaaaaa",
+   "target": "cccccccc",
+   "at": 2000
+  },
+  {
+   "op": "edit",
+   "device": "cccccccc",
+   "id": "i1",
+   "at": 2100,
+   "set": {
+    "password": "planted-by-revoked-device"
+   }
+  },
+  {
+   "op": "edit",
+   "device": "bbbbbbbb",
+   "id": "i1",
+   "at": 2050,
+   "set": {
+    "notes": "from B"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "cccccccc",
+   "now": 3000,
+   "expect": {
+    "kind": "rejected",
+    "reason": "revoked-writer"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "aaaaaaaa",
+   "with": "bbbbbbbb",
+   "now": 3100,
+   "expect": {
+    "kind": "merged"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "aaaaaaaa",
+   "now": 3200,
+   "expect": {
+    "kind": "took-remote"
+   }
+  },
+  {
+   "op": "sync",
+   "device": "bbbbbbbb",
+   "with": "cccccccc",
+   "now": 3300,
+   "expect": {
+    "kind": "rejected",
+    "reason": "revoked-writer"
+   }
+  }
+ ],
+ "asserts": [
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "password",
+   "equals": "pw-One"
+  },
+  {
+   "t": "field",
+   "device": "aaaaaaaa",
+   "id": "i1",
+   "field": "notes",
+   "equals": "from B"
+  },
+  {
+   "t": "meta",
+   "device": "bbbbbbbb",
+   "key": "revokedDevices",
+   "equals": [
+    "cccccccc"
+   ]
+  },
+  {
+   "t": "same",
+   "devices": [
+    "aaaaaaaa",
+    "bbbbbbbb"
+   ]
+  }
+ ]
+}

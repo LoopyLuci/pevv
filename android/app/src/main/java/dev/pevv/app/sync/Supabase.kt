@@ -193,33 +193,37 @@ class Supabase(ctx: Context) {
 
     /* ---------- pevv_blobs (PostgREST) ---------- */
 
-    class Blob(val path: String, val body: String)
+    class Blob(val path: String, val body: String, val rev: Long = 0)
+
+    /** Answer of the `pevv_put` function (supabase/migrations/0002_pevv_hardening.sql). [conflict] carries the newer server copy. */
+    class PutResult(val ok: Boolean, val rev: Long, val error: String? = null, val body: String? = null)
 
     suspend fun pull(): List<Blob>? {
         val tok = accountToken() ?: return null
-        val (c, t) = call("GET", "/rest/v1/pevv_blobs", token = tok, query = mapOf("select" to "path,body"))
+        val (c, t) = call("GET", "/rest/v1/pevv_blobs", token = tok, query = mapOf("select" to "path,body,rev", "deleted_at" to "is.null"))
         if (c !in 200..299) return null
         val arr = Json.parse(t) as? JsonArray ?: return null
         return arr.mapNotNull { e ->
             val o = e as? JsonObject ?: return@mapNotNull null
             val p = o.str("path"); val b = o.str("body")
-            if (p != null && b != null && p in PATHS && b.length <= MAX_BODY) Blob(p, b) else null
+            if (p != null && b != null && p in PATHS && b.length <= MAX_BODY) Blob(p, b, o.long("rev") ?: 0) else null
         }
     }
 
-    suspend fun push(path: String, body: String) {
+    /** Compare-and-swap write: the server only accepts it while its row is still at [expectedRev] (0 = no row yet). */
+    suspend fun push(path: String, body: String, expectedRev: Long): PutResult {
         require(path in PATHS && body.length <= MAX_BODY) { "cloud-file-rejected" }
-        val s = account ?: return
-        val tok = accountToken() ?: return
-        val row = JsonArray(listOf(buildJsonObject { put("user_id", s.userId); put("path", path); put("body", body) }))
-        val (c, t) = call("POST", "/rest/v1/pevv_blobs", row, token = tok, query = mapOf("on_conflict" to "user_id,path"), prefer = "resolution=merge-duplicates,return=minimal")
+        val tok = accountToken() ?: throw SyncError("denied")
+        val (c, t) = call("POST", "/rest/v1/rpc/pevv_put", buildJsonObject { put("p_path", path); put("p_body", body); put("p_expected_rev", expectedRev) }, token = tok)
         if (c !in 200..299) throw errorOf(c, t)
+        val o = try { Json.parseObject(t) } catch (_: Exception) { throw SyncError("unknown") }
+        return PutResult(o.bool("ok") ?: false, o.long("rev") ?: 0, o.str("error"), o.str("body"))
     }
 
+    /** Soft delete: the server keeps the row for a while and `pevv_undelete` brings it back. */
     suspend fun remove(path: String) {
-        val s = account ?: return
         val tok = accountToken() ?: return
-        call("DELETE", "/rest/v1/pevv_blobs", token = tok, query = mapOf("user_id" to "eq.${s.userId}", "path" to "eq.$path"))
+        call("POST", "/rest/v1/rpc/pevv_delete", buildJsonObject { put("p_path", path) }, token = tok)
     }
 
     companion object {

@@ -33,6 +33,8 @@ class PevvApp : Application() {
         relay = Relay(supabase)
         sync = SyncManager(this, vault, supabase, relay, scope)
         bio = BiometricVault(this)
+        // A new vault key makes the biometric copy of the old one useless: drop it, the next password unlock can enrol again.
+        vault.onKeyChanged { bio.forget(); prefs.biometricOn = false }
         sync.start()
         // Screen off with "lock immediately" set: drop the key before anything else can look at the phone.
         registerReceiver(object : BroadcastReceiver() {
