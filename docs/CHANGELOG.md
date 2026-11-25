@@ -4,7 +4,7 @@ PEVV history. PEVV was developed as part of Luciverse until it moved to this rep
 PEVV entries from that project's log, lightly cleaned. Earlier entries mention the Luciverse site, the Android app and
 the original sync; those do not apply to this repository as written (the Android app here is a new native app, see [CLIENT_ANDROID.md](CLIENT_ANDROID.md)).
 
-## Unreleased
+## 0.2.2
 
 - Authenticator frequency: Settings > Authenticator app asks how often the code is needed: every login (default), once a day, once a week, once a month, or only on a new device. Per vault and synced (sealed meta `secondFactorRecheck`, `trustEpoch`); the "last verified" record is per device, bound to the vault key and a device-only key (WebCrypto non-extractable key, Android Keystore), expires when the clock is set back, and is reset by a password change, a revoked device, a replaced authenticator or key rotation. Changing it needs a current code. The master password or passkey is always required. English and Spanish. See [CRYPTO.md](CRYPTO.md).
 - No size limit on a user's own vault: removed the 200 KB client check, the 262144-byte server cap (new migration `0003_pevv_no_size_cap.sql`), the PSP/1 400 KB blob cap (blobs are read in 64 KiB chunks), the desktop peer-file check and the live device lane's 8-part limit. Rate limits, compare-and-swap and revision guards stay. See [SYNC.md](SYNC.md).

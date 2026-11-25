@@ -1,6 +1,6 @@
 {
   "name": "pevv",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "PEVV: an open-source, zero-knowledge password and environment-variable vault for the web, browsers and desktop.",
   "private": true,
   "type": "module",
