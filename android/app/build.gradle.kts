@@ -19,8 +19,8 @@ android {
         // BiometricPrompt needs 28, the Credential Manager provider 34; both are optional features.
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 3
+        versionName = "0.2.1"
 
         // The same values as VITE_PEVV_SYNC_URL / VITE_PEVV_SYNC_ANON_KEY / PEVV_RP_ID. Empty = that feature is off.
         buildConfigField("String", "SYNC_URL", "\"${cfg("pevv.syncUrl", "VITE_PEVV_SYNC_URL").trimEnd('/')}\"")
