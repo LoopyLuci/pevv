@@ -14,9 +14,11 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import dev.pevv.app.core.DeviceMac
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
+import javax.crypto.Mac
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
@@ -81,6 +83,29 @@ object DeviceSeal {
         val c = Cipher.getInstance("AES/GCM/NoPadding")
         c.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, Base64.decode(iv, Base64.NO_WRAP)))
         String(c.doFinal(Base64.decode(ct, Base64.NO_WRAP)), Charsets.UTF_8)
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * A Keystore HMAC key that never leaves the device. It binds the "authenticator passed on this device" record
+ * (see core/Trust.kt), so the record cannot be forged by editing app data. No user presence is needed: it only
+ * vouches for a record the app made itself. Returns null when the Keystore is unusable (then nothing is trusted).
+ */
+object KeystoreDeviceMac : DeviceMac {
+    private const val ALIAS = "pevv_trust_hmac"
+
+    private fun key(): SecretKey {
+        val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (ks.getKey(ALIAS, null) as? SecretKey)?.let { return it }
+        val g = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore")
+        g.init(KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN).build())
+        return g.generateKey()
+    }
+
+    override fun mac(data: ByteArray): ByteArray? = try {
+        Mac.getInstance("HmacSHA256").apply { init(key()) }.doFinal(data)
     } catch (_: Exception) {
         null
     }

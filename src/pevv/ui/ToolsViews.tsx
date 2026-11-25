@@ -8,9 +8,10 @@ import { syncEnabled } from '../host/cloud';
 import { SyncAccountBox } from './SyncAccount';
 import { SyncStatusPanel } from './SyncStatus';
 import { otpauthUri, type TotpConfig } from '../totp';
+import { RECHECK_OPTIONS, asRecheck, type Recheck } from '../trust';
 import {
   addPasskey, clearAudit, importCsvText, linkProgramEnv, renamePasskey, changeMasterPassword, confirmTotpEnrollment, destroyVault, disableTotp, exportVault, importVault, lock, newRecoveryCodes, newRecoveryKit,
-  removePasskey, renameThisDevice, revokeAndRotate, revokeDevice, revokeGrant, setPrefs, setRequirePasskey, startTotpEnrollment, usePevv,
+  removePasskey, renameThisDevice, revokeAndRotate, revokeDevice, revokeGrant, setPrefs, setRequirePasskey, setSecondFactorRecheck, startTotpEnrollment, usePevv,
 } from '../store';
 import { recoveryStatus, peekExport } from '../vault';
 import { localDeviceId } from '../devices';
@@ -207,6 +208,7 @@ function TotpSection() {
           <button type="button" className={btnDanger} onClick={() => gate(() => void disableTotp().catch(() => undefined))}>{t('turnOff')}</button>
         </div>
       )}
+      {totp && !enroll && <RecheckBox />}
       {!totp && !enroll && <button type="button" className={btnPrimary} onClick={() => setEnroll(startTotpEnrollment())} data-testid="pevv-totp-enroll">{t('setUpTotp')}</button>}
       {enroll && (
         <div className="flex flex-col gap-2">
@@ -229,6 +231,41 @@ function TotpSection() {
       {gateNode}
       <p className="text-[0.62rem] text-ink-muted">{t('gateHonesty')}</p>
     </Section>
+  );
+}
+
+const RECHECK_LABEL: Record<Recheck, 'recheckLogin' | 'recheckDaily' | 'recheckWeekly' | 'recheckMonthly' | 'recheckNewDevice'> = {
+  login: 'recheckLogin', daily: 'recheckDaily', weekly: 'recheckWeekly', monthly: 'recheckMonthly', 'new-device': 'recheckNewDevice',
+};
+
+/** How often the authenticator is asked for. Saving needs a current code. */
+function RecheckBox() {
+  const { t } = usePT();
+  const busy = usePevv((s) => s.busy);
+  const current = usePevv((s) => asRecheck(s.meta?.secondFactorRecheck));
+  const [pick, setPick] = useState<Recheck | null>(null);
+  const [code, setCode] = useState('');
+  const [saved, setSaved] = useState(false);
+  const value = pick ?? current;
+  return (
+    <form
+      className="flex flex-col gap-2 rounded-md border border-space-border p-2"
+      data-testid="pevv-recheck"
+      onSubmit={(e) => { e.preventDefault(); setSaved(false); void setSecondFactorRecheck(value, code).then(() => { setPick(null); setCode(''); setSaved(true); }, () => setCode('')); }}
+    >
+      <label className={label}>
+        {t('recheckTitle')}
+        <select className={input} value={value} onChange={(e) => { setPick(e.target.value as Recheck); setSaved(false); }} data-testid="pevv-recheck-select">
+          {RECHECK_OPTIONS.map((o) => <option key={o} value={o}>{t(RECHECK_LABEL[o])}</option>)}
+        </select>
+      </label>
+      <p className="text-[0.62rem] text-ink-muted">{t('recheckHelp')}</p>
+      <div className="flex flex-wrap gap-2">
+        <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} className={`${input} max-w-[10rem] font-mono tracking-[0.3em]`} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} aria-label={t('authenticatorCode')} data-testid="pevv-recheck-code" />
+        <button type="submit" className={btnPrimary} disabled={busy || code.length !== 6 || value === current} data-testid="pevv-recheck-save">{t('recheckApply')}</button>
+        {saved && <span className="self-center text-xs text-accent-green">{t('recheckSaved')}</span>}
+      </div>
+    </form>
   );
 }
 

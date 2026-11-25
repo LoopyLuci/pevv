@@ -260,7 +260,8 @@ class GoldenVectorTest {
         assertEquals(f["vaultText"]!!.s(), file.toText())
         // Frames made here must read back, and carry the same header shape.
         val mine = Transfer.packVault(file)
-        assertEquals(frames.size, mine.size)
+        // The vector was cut with the old 520-character frames (still readable above); new frames are smaller, so there are at least as many.
+        assertTrue(mine.size >= frames.size)
         assertEquals(f["vaultText"]!!.s(), Transfer.unpackFrames(mine).toText())
         assertTrue(mine.all { Transfer.parseFrame(it) != null })
         try {

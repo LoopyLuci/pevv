@@ -117,6 +117,10 @@ export interface VaultMeta {
   /** Key files that count as the second factor. Sealed with the rest of meta. */
   usbKeys?: UsbKeyGate[];
   totpLastStep: number | null;
+  /** How often the authenticator is asked for: every login (default, absent), daily, weekly, monthly or only on a new device. */
+  secondFactorRecheck?: 'login' | 'daily' | 'weekly' | 'monthly' | 'new-device' | undefined;
+  /** Bumped on a password change, a revoked device or a replaced authenticator; remembered verifications from before stop counting. */
+  trustEpoch?: number | undefined;
   /** user folders (names) */
   folders: string[];
   /** program id (e.g. `project:<id>`) → environment it runs with (overrides the active one) */

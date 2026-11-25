@@ -65,7 +65,7 @@ TransferDaemon, Appendix B changes to ask of TransferDaemon.
 
 ## 2. What PEVV does today (the baseline this replaces)
 
-- **Whole-file sync.** `src/pevv/sync.ts` mirrors the sealed `VaultFile` JSON (cap about 200 KB) to one Supabase row
+- **Whole-file sync.** `src/pevv/sync.ts` mirrors the sealed `VaultFile` JSON (no size cap since migration `0003`) to one Supabase row
   (`pevv_blobs`, row-level security per user). A higher `rev` wins (`reconcileRemote` in `src/pevv/store.ts`).
 - **Live exchange.** `src/pevv/roster.ts` and `src/pevv/host/relay.ts` join a Supabase Realtime *broadcast* channel
   `pevv:d:<vaultId>`, announce `rhave {rev}` every 3 seconds, ask with `rwant`, and push the file as up to 8 parts of 48,000
@@ -186,7 +186,7 @@ Design decisions:
 - **Per-device random identity, never derived from the vault or the master password.** One compromised device must not reveal
   another device's transport key, and a transport key must not help unlock a vault.
 - **No signatures in the roster.** An ML-DSA-87 signature is 4,627 bytes (plus 64 for Ed25519). Forty devices would add more than
-  200 KB and break the sync size cap. The roster is sealed under the vault key, so only a vault-key holder could have written it;
+  200 KB to every vault file, which every sync would then carry. The roster is sealed under the vault key, so only a vault-key holder could have written it;
   that is the same trust as today and enough, because every holder of the vault key is already fully trusted at the vault level.
 - **Fingerprint, not full key, in the roster** (about 200 bytes per device). The full key arrives in the handshake and must hash to
   the fingerprint, so the roster entry fully authenticates the peer.
@@ -333,7 +333,7 @@ Reserved for later: 0x10 `ENTRIES_HAVE`, 0x11 `ENTRIES_FETCH`, 0x12 `ENTRIES_PUS
 | PSP traffic | Transferd | Why |
 |---|---|---|
 | ANNOUNCE, ROSTER_HINT, FETCH, PUSH_ACK, BYE | Each side opens **one long-lived control stream** to the other (service `pevv-sync-1`) and only writes on its own. | No open-glare: Transferd lets either side allocate ids, and with one stream per direction nobody has to arbitrate. Small messages ride DATA frames, in order, with the stream's flow control. |
-| BLOB, PUSH body | A **new short-lived stream per transfer**, opened by the sender of the bytes, closed with `fin`. | Head-of-line blocking is per stream; an ANNOUNCE is never stuck behind 200 KB. A failed transfer is a closed stream, not a damaged control channel. |
+| BLOB, PUSH body (any size, read in 64 KiB chunks) | A **new short-lived stream per transfer**, opened by the sender of the bytes, closed with `fin`. | Head-of-line blocking is per stream; an ANNOUNCE is never stuck behind 200 KB. A failed transfer is a closed stream, not a damaged control channel. |
 | Liveness | Transferd's own 1 Hz route pings and 300 ms control-frame retransmission. PSP sends no pings. | Do not duplicate it. |
 
 Transferd's frame cap is about 16 KiB per DATA frame and a stream window starts at 256 KiB, so a 200 KB vault is a dozen frames and at
@@ -559,7 +559,7 @@ blast radius and make abuse visible.
 | T | Pushes a hostile file: lower, higher, forked or malformed. | CAS on `base`; hash and size checks; `validateFile`; `readMeta` when unlocked; fork surfaced; never lower `rev`; desktop keeps 5 backups. | A valid higher-`rev` file sealed by a holder of the vault key (it can rewrite everything, including revoking the others). Undetectable cryptographically. |
 | R | Denies having pushed. | The audit log records device id and node id of the source of each adopted `rev`. | Not signed per write (size). |
 | I | Reads everything it syncs. | That is the definition of a paired device. | Re-key on revoke (question 7). |
-| D | Floods announces or blobs; opens many streams. | Per-service rate limit (overlay), PSP caps (message size 16 KiB, blob 400 KB, 1 transfer in flight per peer), session limit per node. | Self-DoS only; the user removes the device. |
+| D | Floods announces or blobs; opens many streams. | Per-service rate limit (overlay), PSP caps (control message size 16 KiB, 1 transfer in flight per peer; the blob has no size cap and is read in 64 KiB chunks, hash-checked before it is parsed), session limit per node. | Self-DoS only; the user removes the device. |
 | E | Revokes others, adds devices, changes policy through the sealed roster. | Adding a device needs a person to approve on an unlocked device (SAS); all roster edits are audited. | Same trust as today. |
 
 ### 9.5 Stolen phone

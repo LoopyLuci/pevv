@@ -32,6 +32,18 @@
     <string name="biometric_unlock">Biometric unlock</string>
     <string name="camera_desc">Point the camera at the QR code</string>
     <string name="camera_needed">The camera is needed to scan a QR code.</string>
+    <string name="qr_camera_denied">Camera access was denied. Allow it in the app settings to scan, or pick a QR image instead.</string>
+    <string name="qr_camera_failed">The camera could not be started.</string>
+    <string name="qr_gallery">Pick image</string>
+    <string name="qr_low_light">Low light: move somewhere brighter.</string>
+    <string name="qr_low_light_flash">Low light: turn the flash on.</string>
+    <string name="qr_no_camera">This device has no camera. You can still scan a QR from an image.</string>
+    <string name="qr_no_code_in_image">No QR code found in that image.</string>
+    <string name="qr_open_settings">Open settings</string>
+    <string name="qr_switch_camera">Switch camera</string>
+    <string name="qr_torch_off">Flash off</string>
+    <string name="qr_torch_on">Flash on</string>
+    <string name="qr_zoom">Zoom</string>
     <string name="cancel">Cancel</string>
     <string name="capitalize">Capital letters</string>
     <string name="change_password">Change master password</string>
@@ -364,4 +376,13 @@
     <string name="upd_note_confirm_text">Tap to confirm the install.</string>
     <string name="upd_note_failed_title">PEVV update failed</string>
     <string name="upd_note_failed_text">Open PEVV, Settings, Updates for details.</string>
+    <string name="recheck_title">How often to ask for the code</string>
+    <string name="recheck_login">Every login</string>
+    <string name="recheck_daily">Once a day</string>
+    <string name="recheck_weekly">Once a week</string>
+    <string name="recheck_monthly">Once a month</string>
+    <string name="recheck_new_device">Only on a new device</string>
+    <string name="recheck_help">Your master password or passkey is always asked. This only decides how often this vault also asks for the authenticator code on a device that already passed it. It applies to every device of this vault. Changing it needs a current code.</string>
+    <string name="recheck_save">Save</string>
+    <string name="sync_err_server_size">The sync server refused this vault because of its size. The server needs the latest migration (0003, see the self-hosting guide). The vault is still saved on this device.</string>
 </resources>

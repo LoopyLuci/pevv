@@ -107,6 +107,12 @@ object Merge {
                 "usbKeys" -> mergeById(hasBase, B0[k], A[k], B[k])
                 "devices" -> Devices.devicesJson(roster.devices)
                 "revokedDevices" -> jstrs(roster.revokedDevices)
+                "trustEpoch" -> {
+                    val x = A[k]
+                    val y = B[k]
+                    fun isNum(e: JsonElement?) = e is JsonPrimitive && !e.isString && e !is JsonNull
+                    if (isNum(x) && isNum(y)) jnum(maxOf(num(x), num(y))) else pick(hasBase, B0[k], x, y)
+                }
                 "totpLastStep" -> {
                     val x = A[k]
                     val y = B[k]

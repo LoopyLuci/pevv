@@ -33,7 +33,7 @@ What it does, and what it does not do:
    (or `supabase db push` from this repo with the CLI linked to your project).
 
 The migration contains no secrets and no service-role key. It creates `public.pevv_blobs` with row-level security (each user can read
-and write only their own rows; path and size are checked by the database) and the two Realtime policies for `pevv:%` topics.
+and write only their own rows; the path is checked by the database) and the two Realtime policies for `pevv:%` topics.
 
 Never put the **service-role key** into PEVV, a `.env` file in this repo, or a build. The browser only ever uses the project URL and the
 **anon key**, which is public by design: row-level security is what protects the data.
@@ -79,7 +79,7 @@ The desktop app unlocks with those passkeys through the operating system, so it 
 
 ## Hardened schema
 
-Also apply `supabase/migrations/0002_pevv_hardening.sql` (revision compare-and-swap, history, soft delete, size and rate limits, Realtime topic policies). What it does and how to test it: [SYNC.md](SYNC.md). Note that it limits the live device lane to accounts that own a synced copy of the vault.
+Also apply `supabase/migrations/0002_pevv_hardening.sql` (revision compare-and-swap, history, soft delete, rate limit, Realtime topic policies) and then `supabase/migrations/0003_pevv_no_size_cap.sql` (removes the size limit on the sealed vault: you sync your own vault, so it may be as large as it needs to be). What they do and how to test them: [SYNC.md](SYNC.md). Note that 0002 limits the live device lane to accounts that own a synced copy of the vault. Without 0003 the server refuses a vault above 262144 bytes and the clients report it. Limits that remain are yours to set: the request size limit of your API gateway or proxy and your plan's database size.
 
 ## Privacy and abuse notes
 

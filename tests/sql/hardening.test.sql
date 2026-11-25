@@ -1,4 +1,4 @@
--- Tests for supabase/migrations/0002_pevv_hardening.sql on plain PostgreSQL (scripts/test-sql.mjs runs them).
+-- Tests for supabase/migrations/0002_pevv_hardening.sql and 0003_pevv_no_size_cap.sql on plain PostgreSQL (scripts/test-sql.mjs runs them).
 -- Each DO block raises on a failed expectation and prints "ok: <name>" when it passes.
 \set ON_ERROR_STOP on
 \set A '''00000000-0000-0000-0000-00000000000a'''
@@ -144,20 +144,23 @@ begin
 end $$;
 rollback;
 
--- ---------------------------------------------------------------------------------------------- size caps
+-- ---------------------------------------------------------------------------------------------- no size cap (0003)
 begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', :A, true);
 do $$
-declare r jsonb; ok boolean;
+declare r jsonb; ok boolean; n int;
 begin
-  r := public.pevv_put('/vault/pevv-handoff.json', repeat('a', 262144), 0);
-  assert (r->>'ok')::boolean, 'a body at the cap was refused: ' || r::text;
-  r := public.pevv_put('/vault/pevv-handoff.json', repeat('a', 262145), 1);
-  assert r->>'error' = 'too-large', 'a body over the cap was accepted: ' || r::text;
-  ok := false; begin insert into public.pevv_blobs (user_id, path, body) values ('00000000-0000-0000-0000-00000000000a', '/vault/pevv.vault.json', repeat('a', 300000)); exception when others then ok := true; end;
-  assert ok, 'plain insert over the cap was accepted';
-  raise notice 'ok: size cap holds for put and for plain writes';
+  -- Far past the old 262144 byte cap, through put and through plain writes.
+  r := public.pevv_put('/vault/pevv-handoff.json', repeat('a', 5000000), 0);
+  assert (r->>'ok')::boolean, 'a large body was refused: ' || r::text;
+  r := public.pevv_put('/vault/pevv-handoff.json', repeat('b', 262145), 1);
+  assert (r->>'ok')::boolean, 'a body just over the old cap was refused: ' || r::text;
+  ok := true; begin insert into public.pevv_blobs (user_id, path, body) values ('00000000-0000-0000-0000-00000000000a', '/vault/pevv.vault.json', '{"id":"big","rev":1,"pad":"' || repeat('a', 400000) || '"}'); exception when others then ok := false; end;
+  assert ok, 'plain insert of a large vault was refused';
+  select count(*) into n from pg_constraint where conrelid = 'public.pevv_blobs'::regclass and contype = 'c' and pg_get_constraintdef(oid) ~* 'length\(';
+  assert n = 0, 'a length check is still on pevv_blobs';
+  raise notice 'ok: no size cap on put or on plain writes';
 end $$;
 rollback;
 

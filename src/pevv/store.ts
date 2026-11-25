@@ -23,6 +23,7 @@ import { rotateVaultKey } from './rotate';
 import { newRecoveryCode, newRecoveryKey, RECOVERY_CODE_COUNT } from './recovery';
 import { type SyncErrorCode, reportConflicts, reportError, reportNeedsUnlock, reportPending } from './syncStatus';
 import { validateKdf } from './crypto';
+import { type Recheck, asRecheck, asTrustEpoch, forgetTrust, recordTrust, trustHolds } from './trust';
 import { dropTransfer, newTransferToken, pullTransfer, putTransfer } from './host/relay';
 
 export const VAULT_KEY = 'lv-pevv-vault-v1';
@@ -243,7 +244,7 @@ async function openSession(s: V.Session, opts: { skip2fa?: boolean; passkeyDone?
   V.endSession(session);
   session = s;
   const need = {
-    totp: d.meta.require.totp && !opts.skip2fa,
+    totp: d.meta.require.totp && !opts.skip2fa && !(await totpTrusted(file, d.meta, s)),
     passkey: d.meta.require.passkey && !opts.skip2fa && !opts.passkeyDone,
     usbKey: !!d.meta.require.usbKey && !opts.skip2fa && !opts.usbDone,
   };
@@ -257,6 +258,16 @@ async function openSession(s: V.Session, opts: { skip2fa?: boolean; passkeyDone?
 }
 
 let pendingEntries: Entry[] = [];
+
+function trustBinding(file: VaultFile, meta: VaultMeta, s: V.Session) {
+  return { vaultId: file.id, vaultKey: s.raw, keyEpoch: keyEpoch(file), trustEpoch: asTrustEpoch(meta.trustEpoch) };
+}
+
+/** The master password (or passkey) was just accepted; may the authenticator be skipped on this device right now? */
+async function totpTrusted(file: VaultFile, meta: VaultMeta, s: V.Session): Promise<boolean> {
+  if (!meta.require.totp) return false;
+  return trustHolds(asRecheck(meta.secondFactorRecheck), trustBinding(file, meta, s));
+}
 
 function finishUnlock(entries: Entry[]): void {
   pendingEntries = [];
@@ -375,6 +386,7 @@ export async function verifySecondTotp(code: string): Promise<void> {
     const file = await V.saveMeta(st.file!, session, meta);
     set({ file, meta, pending: { ...st.pending, totp: false } });
     persist(file);
+    await recordTrust(trustBinding(file, meta, session));
     if (!get().pending.passkey && !get().pending.usbKey) finishUnlock(pendingEntries);
   });
 }
@@ -474,9 +486,10 @@ export async function finishRecovery(newPassword: string): Promise<void> {
   await withBusy(() => serial(async () => {
     const st = get();
     if (st.status !== 'set-password' || !session || !st.file || !st.meta) throw new Error('not in recovery');
-    let file = await V.changePassword(st.file, session, st.meta, newPassword, await kdfFactory('standard'));
-    if (st.recoverySlot) file = await V.consumeSlot(file, session, st.meta, st.recoverySlot);
-    set({ file, recoverySlot: null });
+    const meta = { ...st.meta, trustEpoch: asTrustEpoch(st.meta.trustEpoch) + 1 };
+    let file = await V.changePassword(st.file, session, meta, newPassword, await kdfFactory('standard'));
+    if (st.recoverySlot) file = await V.consumeSlot(file, session, meta, st.recoverySlot);
+    set({ file, meta, recoverySlot: null });
     persist(file);
     unlockKind = 'unlock-recovery';
     finishUnlock(pendingEntries);
@@ -627,8 +640,10 @@ export async function changeMasterPassword(newPassword: string, strength: 'stand
   await withBusy(() => serial(async () => {
     const { file, meta, s } = need();
     const kdf: KdfParams = await kdfFactory(strength);
-    const f = await V.changePassword(file, s, meta, newPassword, kdf);
-    set({ file: f });
+    // A new password starts a new trust epoch: every device is asked for the authenticator again.
+    const next = { ...meta, trustEpoch: asTrustEpoch(meta.trustEpoch) + 1 };
+    const f = await V.changePassword(file, s, next, newPassword, kdf);
+    set({ file: f, meta: next });
     persist(f);
     audit('password-change', undefined, kdf.alg);
   }));
@@ -730,6 +745,7 @@ export async function confirmTotpEnrollment(cfg: TotpConfig, code: string): Prom
     const f = await V.saveMeta(r.file, s, m);
     set({ file: f, meta: m, totp: cfg });
     persist(f);
+    await recordTrust(trustBinding(f, m, s));
     audit('totp-on');
   }));
 }
@@ -743,6 +759,29 @@ export async function disableTotp(): Promise<void> {
     persist(r.file);
     audit('totp-off');
   });
+}
+
+/**
+ * How often the authenticator is asked for (per vault, synced). Changing it needs a valid current code, so someone with
+ * only the master password cannot relax it. A device that passes the code here is remembered like a normal login.
+ */
+export async function setSecondFactorRecheck(freq: Recheck, code: string): Promise<void> {
+  await withBusy(() => serial(async () => {
+    const { file, meta, s } = need();
+    const cfg = get().totp;
+    if (!meta.require.totp || !cfg) throw new Error('Turn on the authenticator first.');
+    guardLimiter('totp');
+    const step = await verifyTotp(cfg, code, Date.now(), 1, meta.totpLastStep);
+    recordLimiter('totp', step !== null);
+    if (step === null) throw new Error('That code is not valid. Check your authenticator app and the device clock.');
+    const next: VaultMeta = { ...meta, totpLastStep: step, secondFactorRecheck: freq };
+    const f = await V.saveMeta(file, s, next);
+    set({ file: f, meta: next });
+    persist(f);
+    touch();
+    await recordTrust(trustBinding(f, next, s));
+    audit('totp-recheck', undefined, freq);
+  }));
 }
 
 export async function newRecoveryCodes(): Promise<string[]> {
@@ -1035,6 +1074,8 @@ async function claimHandoff(key: string): Promise<boolean> {
 export function destroyVault(): void {
   lock('reset');
   clearVaultBio();
+  const gone = get().file?.id;
+  if (gone) forgetTrust(gone);
   set({ file: null, status: 'none', warnings: [] });
   persist(null);
 }
@@ -1278,7 +1319,8 @@ export async function revokeDevice(id: string): Promise<void> {
   const { meta } = need();
   const revoked = [...new Set([...(meta.revokedDevices ?? []), id])].slice(0, 100);
   const devices = asDevices(meta.devices).filter((d) => d.id !== id);
-  await updateMeta({ devices, revokedDevices: revoked });
+  // Revoking a device also resets the "remembered" authenticator on every device.
+  await updateMeta({ devices, revokedDevices: revoked, trustEpoch: asTrustEpoch(meta.trustEpoch) + 1 });
   audit('device-revoke', undefined, id.slice(0, 8));
 }
 

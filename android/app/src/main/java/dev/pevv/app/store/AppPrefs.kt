@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import dev.pevv.app.core.Devices
+import dev.pevv.app.core.TrustStorage
 import dev.pevv.app.core.VaultDevice
 import java.util.UUID
 
@@ -66,6 +67,17 @@ class AppPrefs(ctx: Context) {
     fun clearRevoked(id: String) = sp.edit().putStringSet("revoked_vaults", revokedVaults() - id).apply()
 
     fun vaultRevokedLocally(id: String) = id in revokedVaults()
+
+    /** When the authenticator was last passed on this device, per vault, with the MAC that binds it (see SecondFactorTrust). */
+    val trustStorage: TrustStorage = object : TrustStorage {
+        override fun get(vaultId: String): Pair<Long, String>? {
+            val v = sp.getString("trust:$vaultId", null)?.split(":", limit = 2) ?: return null
+            val t = v.getOrNull(0)?.toLongOrNull() ?: return null
+            return t to (v.getOrNull(1) ?: return null)
+        }
+        override fun put(vaultId: String, t: Long, mac: String) { sp.edit().putString("trust:$vaultId", "$t:$mac").apply() }
+        override fun clear(vaultId: String) { sp.edit().remove("trust:$vaultId").apply() }
+    }
 
     /** Attempt limiter state per kind and vault: `fails:until`. */
     fun limiter(key: String): Pair<Int, Long> {

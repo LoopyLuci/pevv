@@ -20,9 +20,20 @@ export const HANDOFF_TTL_MS = 3 * 60 * 1000;
 /** How long a shown cloud QR keeps its upload. Matches the seal used for a transfer. */
 export const QR_HOLD_MS = 10 * 60 * 1000;
 export const HANDOFF_PATH = '/vault/pevv-handoff.json';
-/** Bytes of base64url per offline code. Stays in a version the phone can read. */
-const CHUNK = 520;
-const MAX_FRAMES = 12;
+/**
+ * Characters of base64url per offline code. A whole frame (header plus this) fits QR version 12 at error
+ * correction M, a code a phone reads from arm's length even on a small screen. A bigger vault just takes more
+ * frames, shown as a numbered sequence that cycles by itself. The same numbers are in the Android app
+ * (Transfer.kt) and both are tested against android/app/src/test/resources/vectors/qr-frames.json.
+ */
+export const FRAME_CHUNK = 260;
+/** Most frames in one set. Older apps stopped at 12; a set above that needs this version of the scanner. */
+export const MAX_FRAMES = 9999;
+/** How every displayed QR is drawn: error correction M or better, a quiet zone of 4 modules, black on white. */
+export const QR_LEVEL = 'M' as const;
+export const QR_MARGIN = 4;
+/** The highest QR version a frame may need at QR_LEVEL (checked in tests). */
+export const MAX_FRAME_VERSION = 12;
 
 export interface HandoffEnvelope {
   v: 1;
@@ -86,10 +97,15 @@ export async function packVault(file: VaultFile): Promise<string[]> {
   const gz = await pipe(new TextEncoder().encode(JSON.stringify(file)), new CompressionStream('gzip'));
   const data = b64url(gz);
   const crc = await sha8(gz);
-  const n = Math.max(1, Math.ceil(data.length / CHUNK));
+  return splitFrames(data, crc);
+}
+
+/** Cut base64url data into numbered `PEVV1|i|n|crc|chunk` frames. Throws `qr-too-big` past MAX_FRAMES. */
+export function splitFrames(data: string, crc: string): string[] {
+  const n = Math.max(1, Math.ceil(data.length / FRAME_CHUNK));
   if (n > MAX_FRAMES) throw new Error('qr-too-big');
   const frames: string[] = [];
-  for (let i = 0; i < n; i++) frames.push(`PEVV1|${i}|${n}|${crc}|${data.slice(i * CHUNK, (i + 1) * CHUNK)}`);
+  for (let i = 0; i < n; i++) frames.push(`PEVV1|${i}|${n}|${crc}|${data.slice(i * FRAME_CHUNK, (i + 1) * FRAME_CHUNK)}`);
   return frames;
 }
 
@@ -102,6 +118,30 @@ export function parseFrame(text: string): { i: number; n: number; crc: string; c
   const n = Number(m[2]);
   if (!Number.isInteger(i) || !Number.isInteger(n) || n < 1 || n > MAX_FRAMES || i < 0 || i >= n) return null;
   return { i, n, crc: m[3]!, chunk: m[4]! };
+}
+
+/**
+ * Collects scanned frames in any order, with repeats. A frame of another set (other crc or count) means the
+ * sender moved on, so what was collected is dropped. `add` returns null for text that is not a frame.
+ */
+export class FrameAssembler {
+  private parts = new Map<number, string>();
+  private crc = '';
+  private n = 0;
+
+  add(raw: string): { got: number; need: number; complete: boolean } | null {
+    const p = parseFrame(raw);
+    if (!p) return null;
+    if (this.parts.size && (p.crc !== this.crc || p.n !== this.n)) this.parts.clear();
+    this.crc = p.crc;
+    this.n = p.n;
+    this.parts.set(p.i, raw.trim());
+    return { got: this.parts.size, need: p.n, complete: this.parts.size === p.n };
+  }
+
+  frames(): string[] { return [...this.parts.values()]; }
+
+  reset(): void { this.parts.clear(); }
 }
 
 export async function unpackFrames(frames: string[]): Promise<VaultFile> {

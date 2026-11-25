@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CLOUD_PATHS, currentAccount, pullCloud, sendMagicLink, syncEnabled, useCloudFiles } from '@/pevv/host/cloud';
 import { SYNC_ANON_KEY, SYNC_URL, syncConfigured } from '@/pevv/host/config';
 import { initLocale, useLocaleStore } from '@/pevv/host/locale';
-import { newTransferToken, pullTransfer, putTransfer, relayTopic, joinRoster } from '@/pevv/host/relay';
+import { FRAME, newTransferToken, pullTransfer, putTransfer, relayTopic, joinRoster, splitBody } from '@/pevv/host/relay';
 import { cspFor } from '../../scripts/desktop-csp.mjs';
 
 describe('sync is off when it is not configured', () => {
@@ -23,10 +23,19 @@ describe('sync is off when it is not configured', () => {
     await expect(sendMagicLink('a@example.test')).rejects.toThrow(/not configured/);
   });
 
-  it('only the two vault paths and bounded bodies are accepted', () => {
+  it('a vault of any size is cut into frames instead of being refused', () => {
+    const body = 'q'.repeat(FRAME * 60 + 7);
+    const parts = splitBody(body);
+    expect(parts.length).toBe(61);
+    expect(parts.every((p) => p.length <= FRAME)).toBe(true);
+    expect(parts.join('')).toBe(body);
+  });
+
+  it('only the two vault paths are accepted, whatever the size of the body', () => {
     const { writeFile, readFile, removeFile } = useCloudFiles.getState();
     expect(() => writeFile('/vault/other.json', '{}')).toThrow('cloud-file-rejected');
-    expect(() => writeFile(CLOUD_PATHS[0], 'x'.repeat(262_145))).toThrow('cloud-file-rejected');
+    // No size cap: a body far past the old 262144 limit is written like any other.
+    expect(writeFile(CLOUD_PATHS[0], 'x'.repeat(2_000_000)).body.length).toBe(2_000_000);
     expect(writeFile(CLOUD_PATHS[0], '{"a":1}').body).toBe('{"a":1}');
     expect(readFile(CLOUD_PATHS[0])?.body).toBe('{"a":1}');
     expect(removeFile(CLOUD_PATHS[0])).toBe(true);

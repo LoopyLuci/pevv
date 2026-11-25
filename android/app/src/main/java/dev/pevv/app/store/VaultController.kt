@@ -23,7 +23,10 @@ import dev.pevv.app.core.ReconcileAction
 import dev.pevv.app.core.Recovery
 import dev.pevv.app.core.RemoteSource
 import dev.pevv.app.core.RosterSlice
+import dev.pevv.app.core.Recheck
+import dev.pevv.app.core.SecondFactorTrust
 import dev.pevv.app.core.Session
+import dev.pevv.app.core.TrustBinding
 import dev.pevv.app.core.Totp
 import dev.pevv.app.core.TotpConfig
 import dev.pevv.app.core.VaultEngine
@@ -43,10 +46,18 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import dev.pevv.app.security.KeystoreDeviceMac
 import java.io.File
 
 /** The one holder of the vault key and of decrypted items, and only while unlocked. Locking drops all of it. */
-class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: CoroutineScope) {
+class VaultController(
+    ctx: Context,
+    val prefs: AppPrefs,
+    private val scope: CoroutineScope,
+    /** Remembers, per device, that the authenticator was passed (Keystore-bound). Tests pass their own. */
+    private val trust: SecondFactorTrust = SecondFactorTrust(prefs.trustStorage, KeystoreDeviceMac),
+    private val clock: () -> Long = System::currentTimeMillis,
+) {
     enum class Status { NONE, LOCKED, SECOND_FACTOR, SET_PASSWORD, UNLOCKED }
 
     data class Pending(val totp: Boolean = false, val passkey: Boolean = false, val usbKey: Boolean = false) {
@@ -201,7 +212,7 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
         session?.end()
         session = s
         val need = Pending(
-            totp = d.meta.require.totp && !skipSecond,
+            totp = d.meta.require.totp && !skipSecond && !totpTrusted(f, d.meta, s),
             passkey = d.meta.require.passkey && !skipSecond && !passkeyDone,
             usbKey = d.meta.require.usbKey == true && !skipSecond && !usbDone,
         )
@@ -215,6 +226,12 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
         }
         finishUnlock(d.entries)
     }
+
+    private fun trustBinding(f: VaultFile, m: VaultMeta, s: Session) = TrustBinding(f.id, prefs.deviceId, s.raw, f.keyEpoch, SecondFactorTrust.epochOf(m))
+
+    /** The master password (or passkey) was just accepted; may the authenticator be skipped on this device right now? */
+    private fun totpTrusted(f: VaultFile, m: VaultMeta, s: Session): Boolean =
+        m.require.totp && trust.holds(SecondFactorTrust.recheckOf(m), trustBinding(f, m, s), clock())
 
     private fun finishUnlock(list: List<Entry>) {
         pendingEntries = emptyList()
@@ -327,8 +344,10 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
     suspend fun setPasswordAfterRecovery(newPassword: String) = serial {
         val f = file; val s = session; val m = meta
         if (status != Status.SET_PASSWORD || f == null || s == null || m == null) throw UserError("not-recovering")
-        var next = VaultEngine.changePassword(f, s, m, newPassword)
-        recoverySlot?.let { next = VaultEngine.consumeSlot(next, s, m, it) }
+        // A new password starts a new trust epoch: every device is asked for the authenticator again.
+        val bumped = m.with(mapOf("trustEpoch" to jnum(SecondFactorTrust.epochOf(m) + 1)))
+        var next = VaultEngine.changePassword(f, s, bumped, newPassword)
+        recoverySlot?.let { next = VaultEngine.consumeSlot(next, s, bumped, it) }
         recoverySlot = null
         file = next
         persist(next)
@@ -351,6 +370,7 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
         val nf = VaultEngine.saveMeta(f, s, nm)
         file = nf; meta = nm
         persist(nf)
+        trust.record(trustBinding(nf, nm, s), clock())
         pending = pending.copy(totp = false)
         if (!pending.any) finishUnlock(pendingEntries)
     }
@@ -426,6 +446,7 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
 
     private fun destroyInner() {
         lockNow()
+        file?.id?.let { trust.forget(it) }
         file = null
         changeStatus(Status.NONE)
         persist(null)
@@ -507,8 +528,10 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
     suspend fun changePassword(current: String, next: String) = serial {
         val (f, s, m) = need()
         VaultEngine.unlockWithPassword(f, current).end()
-        val nf = VaultEngine.changePassword(f, s, m, next)
-        adopt(nf, m)
+        // A new password starts a new trust epoch: every device is asked for the authenticator again.
+        val bumped = m.with(mapOf("trustEpoch" to jnum(SecondFactorTrust.epochOf(m) + 1)))
+        val nf = VaultEngine.changePassword(f, s, bumped, next)
+        adopt(nf, bumped)
     }
 
     suspend fun newRecoveryCodes(): List<String> = serial {
@@ -530,6 +553,26 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
         val (nf, nm) = VaultEngine.setTotp(f, s, m, cfg)
         adopt(nf, nm)
         totp = cfg
+        // The caller just checked a code from the new authenticator on this device.
+        if (cfg != null) trust.record(trustBinding(nf, nm, s), clock())
+    }
+
+    /**
+     * How often the authenticator is asked for (per vault, synced). Changing it needs a valid current code, so someone with
+     * only the master password cannot relax it. The device that passes the code here is remembered like a normal login.
+     */
+    suspend fun setSecondFactorRecheck(freq: Recheck, code: String) = serial {
+        val (f, s, m) = need()
+        val cfg = totp
+        if (!m.require.totp || cfg == null) throw UserError("totp-off")
+        guardLimiter("totp")
+        val step = Totp.verify(cfg, code, clock(), 1, m.json.get("totpLastStep")?.let { (it as? JsonPrimitive)?.content?.toLongOrNull() })
+        recordLimiter("totp", step != null)
+        if (step == null) throw UserError("bad-code")
+        val nm = m.with(mapOf("totpLastStep" to jnum(step), "secondFactorRecheck" to JsonPrimitive(freq.id)))
+        val nf = VaultEngine.saveMeta(f, s, nm)
+        adopt(nf, nm)
+        trust.record(trustBinding(nf, nm, s), clock())
     }
 
     suspend fun addUsbKey(name: String, unlock: Boolean): String = serial {
@@ -743,7 +786,8 @@ class VaultController(ctx: Context, val prefs: AppPrefs, private val scope: Coro
         if (id == prefs.deviceId) throw UserError("revoke-self")
         val revoked = (m.revokedDevices + id).distinct().take(100)
         val devices = m.devices.filter { it.id != id }
-        writeMetaInner(f, s, m, mapOf("devices" to Devices.devicesJson(devices), "revokedDevices" to jstrs(revoked)))
+        // Revoking a device also resets the "remembered" authenticator on every device.
+        writeMetaInner(f, s, m, mapOf("devices" to Devices.devicesJson(devices), "revokedDevices" to jstrs(revoked), "trustEpoch" to jnum(SecondFactorTrust.epochOf(m) + 1)))
     }
 
     class RotateReport(val codes: List<String>, val recoveryKey: String?, val dropped: List<DroppedSlot>)

@@ -359,10 +359,9 @@ fun SetPasswordScreen() {
 suspend fun installFromScan(app: dev.pevv.app.PevvApp, hit: Transfer.ScanHit, frames: MutableList<String>): String {
     return when (hit) {
         is Transfer.ScanHit.FrameHit -> {
-            if (hit.frame !in frames) frames.add(hit.frame)
-            val first = Transfer.parseFrame(frames.first())!!
-            if (frames.size < first.n) return "progress:${frames.size}/${first.n}"
-            app.vault.installVaultCopy(Transfer.unpackFrames(frames.toList()))
+            val got = Transfer.addFrame(frames, hit.frame) ?: throw dev.pevv.app.core.TransferError("qr-damaged")
+            if (!got.complete) return "progress:${got.got}/${got.need}"
+            app.vault.installVaultCopy(try { Transfer.unpackFrames(frames.toList()) } catch (e: Exception) { frames.clear(); throw e })
             "done"
         }
         is Transfer.ScanHit.HandoffHit -> {

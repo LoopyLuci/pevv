@@ -206,13 +206,13 @@ class Supabase(ctx: Context) {
         return arr.mapNotNull { e ->
             val o = e as? JsonObject ?: return@mapNotNull null
             val p = o.str("path"); val b = o.str("body")
-            if (p != null && b != null && p in PATHS && b.length <= MAX_BODY) Blob(p, b, o.long("rev") ?: 0) else null
+            if (p != null && b != null && p in PATHS) Blob(p, b, o.long("rev") ?: 0) else null
         }
     }
 
     /** Compare-and-swap write: the server only accepts it while its row is still at [expectedRev] (0 = no row yet). */
     suspend fun push(path: String, body: String, expectedRev: Long): PutResult {
-        require(path in PATHS && body.length <= MAX_BODY) { "cloud-file-rejected" }
+        require(path in PATHS) { "cloud-file-rejected" }
         val tok = accountToken() ?: throw SyncError("denied")
         val (c, t) = call("POST", "/rest/v1/rpc/pevv_put", buildJsonObject { put("p_path", path); put("p_body", body); put("p_expected_rev", expectedRev) }, token = tok)
         if (c !in 200..299) throw errorOf(c, t)
@@ -230,9 +230,7 @@ class Supabase(ctx: Context) {
         /** Where the sign-in link comes back to. Add it to the project's allowed redirect URLs. */
         const val REDIRECT = "dev.pevv.app://auth"
         val PATHS = setOf("/vault/pevv.vault.json", "/vault/pevv-handoff.json")
-        const val MAX_BODY = 262_144
         const val SYNC_PATH = "/vault/pevv.vault.json"
-        const val MAX_SYNC = 200_000
     }
 
 }

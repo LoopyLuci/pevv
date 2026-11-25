@@ -156,7 +156,6 @@ class SyncManager(
     private suspend fun mirrorLocked(file: VaultFile?, attempt: Int = 0) {
         if (!loaded || auth.currentAccount == null || file == null || !ctl.prefs.syncOn) return
         val body = file.toText()
-        if (body.length > Supabase.MAX_SYNC) { error = "too-large"; return }
         val existing = cloudBody
         if (existing != null && existing != body) {
             try {

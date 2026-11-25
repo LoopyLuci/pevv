@@ -32,6 +32,18 @@
     <string name="biometric_unlock">Desbloqueo biométrico</string>
     <string name="camera_desc">Apunta la cámara al código QR</string>
     <string name="camera_needed">Se necesita la cámara para escanear un código QR.</string>
+    <string name="qr_camera_denied">Se denegó el acceso a la cámara. Permítelo en los ajustes de la app para escanear, o elige una imagen con un QR.</string>
+    <string name="qr_camera_failed">No se pudo iniciar la cámara.</string>
+    <string name="qr_gallery">Elegir imagen</string>
+    <string name="qr_low_light">Poca luz: busca un lugar más iluminado.</string>
+    <string name="qr_low_light_flash">Poca luz: enciende la linterna.</string>
+    <string name="qr_no_camera">Este dispositivo no tiene cámara. Aún puedes escanear un QR desde una imagen.</string>
+    <string name="qr_no_code_in_image">No se encontró ningún código QR en esa imagen.</string>
+    <string name="qr_open_settings">Abrir ajustes</string>
+    <string name="qr_switch_camera">Cambiar cámara</string>
+    <string name="qr_torch_off">Apagar linterna</string>
+    <string name="qr_torch_on">Encender linterna</string>
+    <string name="qr_zoom">Zoom</string>
     <string name="cancel">Cancelar</string>
     <string name="capitalize">Mayúsculas</string>
     <string name="change_password">Cambiar contraseña maestra</string>
@@ -364,4 +376,13 @@
     <string name="upd_note_confirm_text">Pulsa para confirmar la instalación.</string>
     <string name="upd_note_failed_title">Falló la actualización de PEVV</string>
     <string name="upd_note_failed_text">Abre PEVV, Ajustes, Actualizaciones para ver los detalles.</string>
+    <string name="recheck_title">Cada cuánto pedir el código</string>
+    <string name="recheck_login">En cada inicio de sesión</string>
+    <string name="recheck_daily">Una vez al día</string>
+    <string name="recheck_weekly">Una vez a la semana</string>
+    <string name="recheck_monthly">Una vez al mes</string>
+    <string name="recheck_new_device">Solo en un dispositivo nuevo</string>
+    <string name="recheck_help">Tu contraseña maestra o passkey siempre se pide. Esto solo decide cada cuánto esta bóveda pide también el código de la app de autenticación en un dispositivo que ya lo pasó. Vale para todos los dispositivos de esta bóveda. Cambiarlo requiere un código actual.</string>
+    <string name="recheck_save">Guardar</string>
+    <string name="sync_err_server_size">El servidor de sincronización rechazó esta bóveda por su tamaño. El servidor necesita la última migración (0003, ver la guía de autoalojamiento). La bóveda sigue guardada en este dispositivo.</string>
 </resources>

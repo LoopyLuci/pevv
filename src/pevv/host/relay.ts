@@ -180,7 +180,11 @@ export function rosterTopic(vaultId: string): string {
   return `pevv:d:${vaultId}`;
 }
 
-const ROSTER_PARTS = 8;
+/**
+ * The live device lane has no size cap on a vault: a body is cut into FRAME-sized parts, and this only bounds the part
+ * counter a peer can claim (the same bound as the QR transfer lane), so a bogus `total` cannot grow memory without limit.
+ */
+const ROSTER_PARTS = 10_000;
 
 function peekRev(body: string): number {
   const m = /"rev":(\d+)/.exec(body);
@@ -279,7 +283,7 @@ export async function joinRoster(vaultId: string, onFile: (body: string) => void
 
   return {
     publish(body: string) {
-      if (closed || !body || body === current || body.length > ROSTER_PARTS * FRAME) return;
+      if (closed || !body || body === current) return;
       current = body;
       gen = `${peekRev(body)}:${body.length}:${Date.now()}`;
       void ch.send({ type: 'broadcast', event: 'rhave', payload: { id: vaultId, rev: peekRev(body) } }).catch(() => undefined);

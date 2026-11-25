@@ -320,7 +320,8 @@ export async function replaceRecoveryKey(file: VaultFile, session: Session, meta
 }
 
 export async function setTotp(file: VaultFile, session: Session, meta: VaultMeta, cfg: TotpConfig | null): Promise<{ file: VaultFile; meta: VaultMeta }> {
-  const nextMeta: VaultMeta = { ...meta, require: { ...meta.require, totp: !!cfg }, totpLastStep: null };
+  // A new (or removed) authenticator starts a new trust epoch: nothing remembered about the old one counts.
+  const nextMeta: VaultMeta = { ...meta, require: { ...meta.require, totp: !!cfg }, totpLastStep: null, trustEpoch: (typeof meta.trustEpoch === 'number' ? meta.trustEpoch : 0) + 1 };
   const totp = cfg ? await sealJson(session.key, cfg, aad.totp(file.id)) : null;
   return { file: await commit(file, session, nextMeta, { totp }), meta: nextMeta };
 }

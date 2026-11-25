@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import { syncEnabled } from '../host/cloud';
 import { usePT } from '../i18n';
-import { packVault, parseFrame, parseScan, unpackFrames, QR_HOLD_MS } from '../qr';
+import { FrameAssembler, packVault, parseScan, unpackFrames, QR_HOLD_MS } from '../qr';
 import {
   clearHandoff, confirmPasswordForQr, consumePendingQr, dismissQrWait, installVaultCopy, openVault, publishHandoff, rememberQrToken, usePevv,
 } from '../store';
@@ -124,7 +124,7 @@ function QrSharePanel({ onClose }: { onClose: () => void }) {
         <p className="text-xs text-accent-gold">{t('qrAnyone', { n: left })}</p>
         {url && (
           <div className="flex flex-col items-center gap-2">
-            <QrCode text={url} size={280} level="M" testId="pevv-qr-image" />
+            <QrCode text={url} size={320} testId="pevv-qr-image" />
             <p className="text-center text-xs text-ink-secondary">{t('qrCameraHint')}</p>
           </div>
         )}
@@ -166,7 +166,8 @@ function QrSharePanel({ onClose }: { onClose: () => void }) {
 function FrameReel({ frames }: { frames: string[] }) {
   const { t } = usePT();
   const [i, setI] = useState(0);
-  const [pause, setPause] = useState(true);
+  // More than one frame: cycle by themselves; the scanner takes them in any order.
+  const [pause, setPause] = useState(false);
   useEffect(() => {
     if (pause || frames.length < 2) return;
     const id = window.setInterval(() => setI((n) => (n + 1) % frames.length), 800);
@@ -175,7 +176,7 @@ function FrameReel({ frames }: { frames: string[] }) {
   const text = frames[i] ?? '';
   return (
     <div className="flex flex-col items-center gap-2">
-      <QrCode text={text} size={280} level="L" testId="pevv-qr-frame" />
+      <QrCode text={text} size={320} testId="pevv-qr-frame" />
       <p className="font-mono text-xs text-cyan-100" data-testid="pevv-qr-frame-n">{t('qrFrame', { i: i + 1, n: frames.length })}</p>
       {frames.length > 1 && (
         <div className="flex gap-2">
@@ -251,7 +252,7 @@ export function QrWaitPanel() {
 }
 
 function useFrameSink(onProgress: (p: { got: number; need: number }) => void, onDone: () => void) {
-  const parts = useRef(new Map<number, string>());
+  const parts = useRef(new FrameAssembler());
   const done = useRef(false);
   return async (raw: string) => {
     if (done.current) return;
@@ -265,17 +266,17 @@ function useFrameSink(onProgress: (p: { got: number; need: number }) => void, on
       await consumePendingQr();
       return;
     }
-    const frame = parseFrame(hit.frame);
-    if (!frame) return;
-    parts.current.set(frame.i, hit.frame);
-    onProgress({ got: parts.current.size, need: frame.n });
-    if (parts.current.size !== frame.n) return;
+    const got = parts.current.add(hit.frame);
+    if (!got) return;
+    onProgress({ got: got.got, need: got.need });
+    if (!got.complete) return;
     done.current = true;
     try {
-      await installVaultCopy(await unpackFrames([...parts.current.values()]));
+      await installVaultCopy(await unpackFrames(parts.current.frames()));
       openVault();
     } catch (e) {
       done.current = false;
+      parts.current.reset();
       usePevv.setState({ error: (e as Error).message });
     }
     onDone();
@@ -342,6 +343,8 @@ function Scanner({ onProgress, onCameraError, onDone }: { onProgress: (p: { got:
       }
       if (stop || !videoRef.current) { stream.getTracks().forEach((tr) => tr.stop()); return; }
       video.srcObject = stream;
+      // Continuous autofocus where the browser allows it, so a blurred frame recovers by itself.
+      try { await stream.getVideoTracks()[0]?.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }); } catch { /* not supported */ }
       const play = async () => {
         try { await video.play(); setNeedTap(false); } catch { if (!stop) setNeedTap(true); }
       };

@@ -20,7 +20,6 @@ export interface SyncAccount { userId: string; email: string | null; anonymous: 
 
 /** The only paths the cloud copy accepts (the server enforces the same list). */
 export const CLOUD_PATHS = ['/vault/pevv.vault.json', '/vault/pevv-handoff.json'] as const;
-const MAX_BODY = 262_144;
 
 export const syncEnabled = (): boolean => syncConfigured();
 
@@ -102,7 +101,7 @@ export const useCloudFiles = create<CloudFiles>()((set, get) => ({
   },
   readFile: (path) => get().files.find((f) => f.path === path),
   writeFile: (path, body) => {
-    if (!(CLOUD_PATHS as readonly string[]).includes(path) || body.length > MAX_BODY) throw new Error('cloud-file-rejected');
+    if (!(CLOUD_PATHS as readonly string[]).includes(path)) throw new Error('cloud-file-rejected');
     const prev = get().files.find((f) => f.path === path);
     const file: CloudFile = { path, body, rev: prev?.rev ?? 0 };
     set({ files: [...get().files.filter((f) => f.path !== path), file] });
@@ -175,7 +174,7 @@ export function pullCloud(): Promise<void> {
       reportBusy(true);
       const { data, error } = await c.from('pevv_blobs').select('path, body, rev, deleted_at').is('deleted_at', null);
       if (error || !Array.isArray(data)) { reportError('offline'); return; }
-      const next = (data as CloudFile[]).filter((r) => (CLOUD_PATHS as readonly string[]).includes(r.path) && typeof r.body === 'string' && r.body.length <= MAX_BODY)
+      const next = (data as CloudFile[]).filter((r) => (CLOUD_PATHS as readonly string[]).includes(r.path) && typeof r.body === 'string')
         .map((r) => ({ path: r.path, body: r.body, rev: Number(r.rev) || 0 }));
       const cur = useCloudFiles.getState();
       const same = cur.filesLoaded && cur.files.length === next.length && next.every((n) => cur.files.some((f) => f.path === n.path && f.body === n.body && f.rev === n.rev));

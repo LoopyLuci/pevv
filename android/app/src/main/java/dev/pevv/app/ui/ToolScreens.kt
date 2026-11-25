@@ -1,16 +1,5 @@
 package dev.pevv.app.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.util.Size
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,19 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import com.google.zxing.BinaryBitmap
-import com.google.zxing.DecodeHintType
-import com.google.zxing.MultiFormatReader
-import com.google.zxing.PlanarYUVLuminanceSource
-import com.google.zxing.common.HybridBinarizer
-import com.google.zxing.BarcodeFormat
 import dev.pevv.app.R
 import dev.pevv.app.core.GenOpts
 import dev.pevv.app.core.Generator
@@ -64,7 +44,6 @@ import dev.pevv.app.pevv
 import dev.pevv.app.sync.SyncConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
 
 @Composable
 fun GeneratorPanel(onUse: ((String) -> Unit)? = null) {
@@ -127,62 +106,6 @@ fun BackBar(title: String, onBack: () -> Unit) {
 }
 
 /* ───────────────────────── scan ───────────────────────── */
-
-/** Camera preview that reports every QR code text it decodes (CameraX + ZXing; nothing leaves the phone). */
-@Composable
-fun QrCamera(onText: (String) -> Unit, modifier: Modifier = Modifier) {
-    val ctx = LocalContext.current
-    val owner = LocalLifecycleOwner.current
-    var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
-    LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
-    if (!granted) {
-        Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.camera_needed))
-            PrimaryButton(stringResource(R.string.allow_camera), { ask.launch(Manifest.permission.CAMERA) })
-        }
-        return
-    }
-    val executor = remember { Executors.newSingleThreadExecutor() }
-    val reader = remember { MultiFormatReader().also { it.setHints(mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE), DecodeHintType.TRY_HARDER to true)) } }
-    var last by remember { mutableStateOf("" to 0L) }
-    val view = remember { PreviewView(ctx) }
-    DisposableEffect(owner) {
-        val future = ProcessCameraProvider.getInstance(ctx)
-        var provider: ProcessCameraProvider? = null
-        future.addListener({
-            val p = future.get()
-            provider = p
-            val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
-            val analysis = ImageAnalysis.Builder().setTargetResolution(Size(1280, 720)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
-            analysis.setAnalyzer(executor) { img: ImageProxy ->
-                try {
-                    val plane = img.planes[0]
-                    val buf = plane.buffer
-                    val data = ByteArray(buf.remaining()).also { buf.get(it) }
-                    val src = PlanarYUVLuminanceSource(data, plane.rowStride, img.height, 0, 0, img.width, img.height, false)
-                    val res = reader.decodeWithState(BinaryBitmap(HybridBinarizer(src)))
-                    val now = System.currentTimeMillis()
-                    if (res.text != last.first || now - last.second > 1500) {
-                        last = res.text to now
-                        view.post { onText(res.text) }
-                    }
-                } catch (_: Exception) {
-                } finally {
-                    reader.reset()
-                    img.close()
-                }
-            }
-            try {
-                p.unbindAll()
-                p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
-            } catch (_: Exception) {
-            }
-        }, ContextCompat.getMainExecutor(ctx))
-        onDispose { provider?.unbindAll(); executor.shutdown() }
-    }
-    AndroidView({ view }, modifier.semantics { contentDescription = ctx.getString(R.string.camera_desc) })
-}
 
 /** Scan a vault QR (offline codes or a live transfer code) and install the vault on this phone. */
 @OptIn(ExperimentalMaterial3Api::class)

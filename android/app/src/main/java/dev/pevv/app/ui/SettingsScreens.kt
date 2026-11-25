@@ -46,6 +46,8 @@ import dev.pevv.app.core.ImportResult
 import dev.pevv.app.core.Json
 import dev.pevv.app.core.Recovery
 import dev.pevv.app.core.Entry
+import dev.pevv.app.core.Recheck
+import dev.pevv.app.core.SecondFactorTrust
 import dev.pevv.app.core.Totp
 import dev.pevv.app.core.TotpConfig
 import dev.pevv.app.core.VaultEngine
@@ -67,6 +69,15 @@ private fun Row2(label: String, content: @Composable () -> Unit) {
         content()
     }
 }
+
+@Composable
+private fun recheckLabel(o: Recheck): String = stringResource(when (o) {
+    Recheck.LOGIN -> R.string.recheck_login
+    Recheck.DAILY -> R.string.recheck_daily
+    Recheck.WEEKLY -> R.string.recheck_weekly
+    Recheck.MONTHLY -> R.string.recheck_monthly
+    Recheck.NEW_DEVICE -> R.string.recheck_new_device
+})
 
 @Composable
 private fun Choice(options: List<Pair<String, Int>>, current: Int, onPick: (Int) -> Unit) {
@@ -330,6 +341,19 @@ fun FactorsScreen(onBack: () -> Unit) {
             if (meta?.require?.totp == true) {
                 Done(stringResource(R.string.totp_on))
                 SecondaryButton(stringResource(R.string.turn_off), { run { ctl.setTotpGate(null) } })
+                val cur = SecondFactorTrust.recheckOf(meta)
+                var pick by remember(cur) { mutableStateOf(cur) }
+                var recheckCode by remember { mutableStateOf("") }
+                Text(stringResource(R.string.recheck_title), style = MaterialTheme.typography.titleSmall)
+                for (o in Recheck.values()) {
+                    FilterChip(selected = pick == o, onClick = { pick = o }, label = { Text(recheckLabel(o)) })
+                }
+                Text(stringResource(R.string.recheck_help))
+                OutlinedTextField(recheckCode, { recheckCode = it.filter(Char::isDigit).take(6) }, label = { Text(stringResource(R.string.auth_code)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                PrimaryButton(stringResource(R.string.recheck_save), {
+                    run { ctl.setSecondFactorRecheck(pick, recheckCode); recheckCode = ""; op.message = ctx.getString(R.string.saved) }
+                }, enabled = recheckCode.length == 6 && pick != cur && !op.busy)
             } else {
                 if (secret == null) SecondaryButton(stringResource(R.string.totp_set_up), { secret = Totp.newSecret() })
                 else {
@@ -426,7 +450,7 @@ fun SyncScreen(onBack: () -> Unit) {
 private fun syncErrorText(code: String): String = when (code) {
     "offline" -> stringResource(R.string.sync_err_offline)
     "rate-limited" -> stringResource(R.string.sync_err_rate)
-    "too-large" -> stringResource(R.string.sync_err_too_large)
+    "too-large" -> stringResource(R.string.sync_err_server_size)
     "rejected-revoked" -> stringResource(R.string.sync_err_revoked)
     "rejected-stale-key" -> stringResource(R.string.sync_err_stale_key)
     "rejected-key" -> stringResource(R.string.sync_err_key)

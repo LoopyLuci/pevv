@@ -1,6 +1,7 @@
 /** Small shared PEVV UI pieces. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import qrcode from 'qrcode-generator';
+import { QR_LEVEL, QR_MARGIN } from '../qr';
 import { strength as measure } from '../gen';
 import { usePT, type PKey } from '../i18n';
 import { copySecret, needsReauth, reauthPasskey, reauthPassword, usePevv } from '../store';
@@ -141,7 +142,8 @@ export function useReauthGate(): [ReactNode, (fn: () => void, reason?: string) =
   return [node, gate];
 }
 
-export function QrCode({ text, size = 220, testId, level = 'M' }: { text: string; size?: number; testId?: string; level?: 'L' | 'M' | 'Q' | 'H' }) {
+/** Always black on pure white (also in dark mode), a quiet zone of QR_MARGIN modules, lowest version the text allows, shrinks to fit a narrow screen. */
+export function QrCode({ text, size = 280, testId, level = QR_LEVEL }: { text: string; size?: number; testId?: string; level?: 'L' | 'M' | 'Q' | 'H' }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -150,7 +152,7 @@ export function QrCode({ text, size = 220, testId, level = 'M' }: { text: string
     qr.addData(text);
     qr.make();
     const n = qr.getModuleCount();
-    const margin = 4;
+    const margin = QR_MARGIN;
     const scale = Math.max(3, Math.floor(size / (n + margin * 2)));
     const total = (n + margin * 2) * scale;
     canvas.width = total;
@@ -171,7 +173,7 @@ export function QrCode({ text, size = 220, testId, level = 'M' }: { text: string
       role="img"
       aria-label="QR code"
       data-testid={testId}
-      style={{ width: size, height: size, background: '#fff', padding: 0, borderRadius: 8, imageRendering: 'pixelated' }}
+      style={{ width: size, maxWidth: '100%', height: 'auto', aspectRatio: '1 / 1', background: '#fff', padding: 0, borderRadius: 8, imageRendering: 'pixelated' }}
     />
   );
 }

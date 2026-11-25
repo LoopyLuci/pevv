@@ -33,6 +33,14 @@ payload of portable export v2. **It must stay readable by every released client.
 
 - `v`: 1, or 2 after a key rotation. `keyEpoch` (integer >= 1, only with `v: 2`) counts rotations; a copy with a lower epoch is refused by sync.
 - Inside the sealed meta: `lastWriter` (device id of the last writer, used to refuse writes from revoked devices).
+- Inside the sealed meta, how often the authenticator (TOTP) is asked for, both optional (absent = the old behaviour), so the
+  file `v` does not change and older clients keep every field when they save:
+  - `secondFactorRecheck`: `"login"` (every login, the default), `"daily"`, `"weekly"`, `"monthly"` or `"new-device"`. A value a
+    client does not know means `"login"`. Per vault and synced: it is a security policy of the vault, sealed with the rest of meta.
+  - `trustEpoch`: integer >= 0, bumped on a password change, a revoked device or a replaced/removed authenticator. Merges take the
+    larger value. A "last verified" record made under an older epoch no longer counts.
+  The record that says "this device passed the authenticator at time T" is **not** in the file: it stays on the device (see
+  CRYPTO.md, "Authenticator frequency"). There is no size limit on the vault file.
 - Inside a sealed item: `conflicts[]` of `{at, ver, data}`, the versions that lost a merge (at most 5). Older clients keep them untouched.
 
 See [SYNC.md](SYNC.md).

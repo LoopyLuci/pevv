@@ -30,6 +30,9 @@ Out of scope:
 - Anything that needs malware, a keylogger or full control of the unlocked device or browser profile (see the threat model).
 - A weak master password the user chose, or loss of every unlock method (there is no reset by design).
 - Social engineering, physical attacks, denial of service against your own Supabase project.
+- Remembering that the authenticator was passed on a device ("Authenticator frequency", docs/CRYPTO.md) being usable by whoever
+  already controls that unlocked device or its key store. The record is bound to the vault key and to a device-only key, so it
+  cannot be forged from the master password or by editing stored data.
 - The in-page TOTP / passkey second-factor *gates* being client-side: they are documented as a convenience barrier; the cryptographic
   boundary is the master password / PRF / recovery secret.
 - Findings in third-party services (Supabase, GitHub, browser vendors); report those upstream.

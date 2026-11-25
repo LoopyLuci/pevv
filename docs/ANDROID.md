@@ -7,7 +7,7 @@ through the same Supabase table and relay topics. How to build and run it: [CLIE
 ## Goals and limits
 
 - One vault format everywhere ([VAULT_FORMAT.md](VAULT_FORMAT.md), [CRYPTO.md](CRYPTO.md)). Android is a client, not a fork.
-- Keep every secret on the device. The cloud holds only the sealed vault (size limit 200000 characters, as in `host/cloud.ts`).
+- Keep every secret on the device. The cloud holds only the sealed vault (no size limit on a user's own vault; `supabase/migrations/0003_pevv_no_size_cap.sql`).
 - Fail closed: if a check cannot be made (origin, asset links, key store), nothing is filled or signed.
 - No Google Play Services, no analytics, no crash reporter. Network access is limited to the sync URL the build was given.
 - minSdk 26 (Android 8.0). It is the first release with the autofill framework and `java.util.Base64`, which keeps the crypto

@@ -129,6 +129,7 @@ function mergeMeta(hasBase: boolean, base: VaultMeta | null, a: VaultMeta, b: Va
       case 'usbKeys': v = mergeById(hasBase, B0[k], A[k], B[k]); break;
       case 'devices': v = roster.devices; break;
       case 'revokedDevices': v = roster.revokedDevices; break;
+      case 'trustEpoch': v = typeof A[k] === 'number' && typeof B[k] === 'number' ? Math.max(A[k] as number, B[k] as number) : pick(hasBase, B0[k], A[k], B[k]); break;
       case 'totpLastStep': v = typeof A[k] === 'number' && typeof B[k] === 'number' ? Math.max(A[k] as number, B[k] as number) : pick(hasBase, B0[k], A[k], B[k]); break;
       default: v = pick(hasBase, B0[k], A[k], B[k]);
     }

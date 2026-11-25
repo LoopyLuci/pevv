@@ -18,8 +18,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 pub const FILE_NAME: &str = "transferd.json";
-/// A sealed vault is about 200 KB at most (docs/TRANSPORT.md 9.4: blob cap 400 KB).
-pub const MAX_FILE_BYTES: usize = 400 * 1024;
 pub const MAX_RELAYS: usize = 4;
 pub const MAX_PEERS: usize = 40;
 const MAX_NAME: usize = 40;
@@ -224,9 +222,10 @@ pub fn envelope(bytes: &[u8]) -> Option<(String, u64)> {
 }
 
 /// Cheap checks before a peer's file is even held for the vault UI (which then runs `validateFile`,
-/// the key checks and the merge): size, format, same vault id, and the revision it claims.
+/// the key checks and the merge): format, same vault id, and the revision it claims. There is no size cap: a user may
+/// sync their own vault of any size.
 pub fn acceptable(vault_id: &str, rev: u64, bytes: &[u8]) -> bool {
-    bytes.len() <= MAX_FILE_BYTES && !vault_id.is_empty() && envelope(bytes).is_some_and(|(id, r)| id == vault_id && r == rev)
+    !vault_id.is_empty() && envelope(bytes).is_some_and(|(id, r)| id == vault_id && r == rev)
 }
 
 /// A file from a peer, waiting for the vault UI to merge it.
@@ -346,8 +345,9 @@ mod tests {
         assert!(!acceptable("", 5, &ok));
         assert!(!acceptable("v1", 5, b"not json"));
         assert!(!acceptable("v1", 5, br#"{"format":"other","id":"v1","rev":5}"#));
-        let big = format!(r#"{{"format":"luciverse.pevv","id":"v1","rev":5,"pad":"{}"}}"#, "x".repeat(MAX_FILE_BYTES));
-        assert!(!acceptable("v1", 5, big.as_bytes()));
+        // No size cap: a vault far past the old 400 KB limit is held like any other.
+        let big = format!(r#"{{"format":"luciverse.pevv","id":"v1","rev":5,"pad":"{}"}}"#, "x".repeat(4 * 1024 * 1024));
+        assert!(acceptable("v1", 5, big.as_bytes()));
     }
 
     #[test]

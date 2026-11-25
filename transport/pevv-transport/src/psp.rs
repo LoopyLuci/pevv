@@ -2,7 +2,10 @@
 //!
 //! Frame on a stream: `type u8 | flags u8 | len u32 BE | body`. Control bodies are UTF-8 JSON,
 //! at most [`MAX_CONTROL`] bytes. BLOB and PUSH bodies are a JSON header (the frame `len`
-//! covers the header only) followed by exactly `size` raw bytes of sealed vault file.
+//! covers the header only) followed by exactly `size` raw bytes of sealed vault file. The vault
+//! file has no size cap (a user may sync their own vault of any size): the body is not part of
+//! the 16 KiB control frame, and a reader takes it in [`BLOB_CHUNK`] pieces, so memory grows only
+//! with bytes that really arrive and a header that lies about `size` costs nothing.
 //! Unknown `type` values are skipped using `len`; unknown JSON fields are ignored.
 //!
 //! This module is pure: it works on byte slices and any `AsyncRead`/`AsyncWrite`, so the same
@@ -18,8 +21,8 @@ use crate::error::{Error, Result};
 pub const PSP_VERSION: u32 = 1;
 /// Largest JSON control body.
 pub const MAX_CONTROL: usize = 16 * 1024;
-/// Largest sealed vault file accepted or sent (doc: blob 400 KB).
-pub const MAX_BLOB: usize = 400 * 1024;
+/// A blob body is read in pieces of this size. This is a read buffer, not a limit on the file.
+pub const BLOB_CHUNK: usize = 64 * 1024;
 /// Header: type, flags, 4-byte length.
 pub const HEADER_LEN: usize = 6;
 
@@ -275,7 +278,9 @@ impl Message {
         match ty {
             kind::BLOB | kind::PUSH => {
                 let size = declared_size(ty, body)?;
-                let total = end + size;
+                let total = end
+                    .checked_add(size)
+                    .ok_or_else(|| Error::Protocol("blob size out of range".into()))?;
                 if buf.len() < total {
                     return Err(Error::Protocol("truncated blob".into()));
                 }
@@ -287,9 +292,6 @@ impl Message {
 }
 
 fn check_blob(size: u64, hash: &str, bytes: &[u8]) -> Result<()> {
-    if bytes.len() > MAX_BLOB {
-        return Err(Error::TooLarge("blob"));
-    }
     if size != bytes.len() as u64 {
         return Err(Error::Invalid("size does not match the bytes".into()));
     }
@@ -299,6 +301,7 @@ fn check_blob(size: u64, hash: &str, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// The `size` a BLOB or PUSH header declares. Any size is valid; the caller reads it in chunks.
 fn declared_size(ty: u8, body: &[u8]) -> Result<usize> {
     let size = if ty == kind::BLOB {
         serde_json::from_slice::<BlobHeader>(body)
@@ -309,10 +312,7 @@ fn declared_size(ty: u8, body: &[u8]) -> Result<usize> {
             .map_err(|e| Error::Protocol(e.to_string()))?
             .size
     };
-    if size > MAX_BLOB as u64 {
-        return Err(Error::TooLarge("blob"));
-    }
-    Ok(size as usize)
+    usize::try_from(size).map_err(|_| Error::Protocol("blob size out of range".into()))
 }
 
 fn parse(ty: u8, body: &[u8], tail: Option<Vec<u8>>) -> Result<Message> {
@@ -343,6 +343,19 @@ fn parse(ty: u8, body: &[u8], tail: Option<Vec<u8>>) -> Result<Message> {
     })
 }
 
+/// Read exactly `size` bytes in [`BLOB_CHUNK`] pieces. The buffer grows only as data arrives, so a peer that declares a
+/// huge `size` and sends nothing makes this fail with an I/O error instead of reserving memory.
+async fn read_blob<R: AsyncRead + Unpin>(r: &mut R, size: usize) -> Result<Vec<u8>> {
+    let mut bytes: Vec<u8> = Vec::with_capacity(size.min(BLOB_CHUNK));
+    let mut piece = vec![0u8; BLOB_CHUNK.min(size.max(1))];
+    while bytes.len() < size {
+        let want = (size - bytes.len()).min(BLOB_CHUNK);
+        r.read_exact(&mut piece[..want]).await?;
+        bytes.extend_from_slice(&piece[..want]);
+    }
+    Ok(bytes)
+}
+
 /// Read one message from a stream. `Ok(None)` is a clean end of stream before a frame starts.
 /// Hash and size of a blob are verified here, before anything is parsed further.
 pub async fn read_message<R: AsyncRead + Unpin>(r: &mut R) -> Result<Option<Message>> {
@@ -362,9 +375,7 @@ pub async fn read_message<R: AsyncRead + Unpin>(r: &mut R) -> Result<Option<Mess
     r.read_exact(&mut body).await?;
     let tail = if ty == kind::BLOB || ty == kind::PUSH {
         let size = declared_size(ty, &body)?;
-        let mut bytes = vec![0u8; size];
-        r.read_exact(&mut bytes).await?;
-        Some(bytes)
+        Some(read_blob(r, size).await?)
     } else {
         None
     };
@@ -489,17 +500,29 @@ mod tests {
         let n = wire.len();
         wire[n - 1] ^= 1;
         assert!(matches!(Message::decode(&wire), Err(Error::Invalid(_))));
+    }
 
-        let big = vec![0u8; MAX_BLOB + 1];
-        let h = BlobHeader {
-            rev: 1,
-            hash: hash_hex(&big),
-            size: big.len() as u64,
-        };
-        assert!(matches!(
-            Message::Blob(h, big).encode(),
-            Err(Error::TooLarge(_))
-        ));
+    #[test]
+    fn a_large_vault_has_no_size_cap() {
+        // Far past the old 400 KB cap.
+        let big: Vec<u8> = (0..5 * 1024 * 1024u32).map(|i| (i % 251) as u8).collect();
+        let (h, b) = blob(&big);
+        let m = Message::Blob(h.clone(), b);
+        let wire = m.encode().unwrap();
+        let (back, used) = Message::decode(&wire).unwrap();
+        assert_eq!(back, m);
+        assert_eq!(used, wire.len());
+        let push = Message::Push(
+            PushHeader {
+                base: 1,
+                rev: 2,
+                hash: h.hash,
+                size: h.size,
+            },
+            big,
+        );
+        let (back, _) = Message::decode(&push.encode().unwrap()).unwrap();
+        assert_eq!(back, push);
     }
 
     #[test]
@@ -508,6 +531,40 @@ mod tests {
         assert!(Message::decode(&[kind::HELLO, 0, 0, 0, 0, 5, b'{']).is_err());
         assert!(Message::decode(&frame(kind::HELLO, b"not json", &[])).is_err());
         assert!(Message::decode(&frame(kind::FETCH, br#"{"have":1,"want":"nope"}"#, &[])).is_err());
+    }
+
+    #[tokio::test]
+    async fn stream_reader_streams_a_large_blob_in_chunks() {
+        let big: Vec<u8> = (0..(3 * BLOB_CHUNK + 123) as u32)
+            .map(|i| (i % 253) as u8)
+            .collect();
+        let (h, b) = blob(&big);
+        let wire = Message::Blob(h, b).encode().unwrap();
+        let mut r = &wire[..];
+        match read_message(&mut r).await.unwrap() {
+            Some(Message::Blob(_, got)) => assert_eq!(got, big),
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_header_that_lies_about_size_fails_without_reserving_memory() {
+        // Declares 4 GiB but sends 10 bytes: the stream ends, the reader reports an error.
+        let header = br#"{"rev":1,"hash":"00","size":4294967296}"#;
+        let mut wire = frame(kind::BLOB, header, b"0123456789");
+        let mut r = &wire[..];
+        assert!(read_message(&mut r).await.is_err());
+        // The same through the slice decoder.
+        assert!(Message::decode(&wire).is_err());
+        // A size that does not fit in memory at all.
+        wire = frame(
+            kind::BLOB,
+            br#"{"rev":1,"hash":"00","size":18446744073709551615}"#,
+            b"x",
+        );
+        let mut r = &wire[..];
+        assert!(read_message(&mut r).await.is_err());
+        assert!(Message::decode(&wire).is_err());
     }
 
     #[tokio::test]

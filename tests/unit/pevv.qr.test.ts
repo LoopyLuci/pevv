@@ -2,7 +2,9 @@
 import qrcode from 'qrcode-generator';
 import { describe, expect, it, vi } from 'vitest';
 import type { VaultFile } from '@/pevv/model';
-import { openHandoff, packVault, parseScan, sealHandoff, shareUrl, unpackFrames } from '@/pevv/qr';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { FRAME_CHUNK, FrameAssembler, MAX_FRAMES, MAX_FRAME_VERSION, QR_LEVEL, QR_MARGIN, openHandoff, packVault, parseScan, sealHandoff, shareUrl, splitFrames, unpackFrames } from '@/pevv/qr';
 import { splitBody, relayTopic, rosterTopic } from '@/pevv/host/relay';
 
 function vault(extra = ''): VaultFile {
@@ -48,10 +50,12 @@ describe('PEVV QR transfer', () => {
     if (frames.length > 1) await expect(unpackFrames(frames.slice(1))).rejects.toThrow('qr-incomplete');
   });
 
-  it('refuses a vault that will not fit in a scannable set of codes', async () => {
+  it('packs a large vault into many scannable codes instead of refusing it', async () => {
     const noise = crypto.getRandomValues(new Uint8Array(48_000));
     const extra = Buffer.from(noise).toString('base64url');
-    await expect(packVault(vault(extra))).rejects.toThrow('qr-too-big');
+    const frames = await packVault(vault(extra));
+    expect(frames.length).toBeGreaterThan(48);
+    expect(frames.length).toBeLessThanOrEqual(MAX_FRAMES);
   });
 
   it('seals a handoff the server cannot read, and expires it', async () => {
@@ -120,5 +124,70 @@ describe('PEVV vault-QR public link', () => {
       vi.unstubAllEnvs();
       vi.resetModules();
     }
+  });
+});
+
+/** Shared with the Android tests (QrFramesTest.kt): both sides must cut, collect and size codes the same way. */
+const vectors = JSON.parse(readFileSync(join(process.cwd(), 'android', 'app', 'src', 'test', 'resources', 'vectors', 'qr-frames.json'), 'utf8')) as {
+  chunk: number; maxFrames: number; maxVersion: number;
+  split: { data: string; crc: string; frames: string[] }[];
+  assemble: { name: string; input: string[]; progress: ([number, number] | null)[] }[];
+  versions: { text: string; level: string; version: number }[];
+};
+
+/** The lowest QR version that holds the text, found by trying each one. */
+function lowestVersion(text: string, level: 'L' | 'M' | 'Q' | 'H'): number {
+  for (let v = 1; v <= 40; v++) {
+    try {
+      const qr = qrcode(v as Parameters<typeof qrcode>[0], level);
+      qr.addData(text);
+      qr.make();
+      return v;
+    } catch { /* too small */ }
+  }
+  throw new Error('too big');
+}
+
+describe('PEVV QR frames: shared vectors', () => {
+  it('uses the constants the vectors were made with', () => {
+    expect(FRAME_CHUNK).toBe(vectors.chunk);
+    expect(MAX_FRAMES).toBe(vectors.maxFrames);
+    expect(MAX_FRAME_VERSION).toBe(vectors.maxVersion);
+    expect(QR_LEVEL).toBe('M');
+    expect(QR_MARGIN).toBeGreaterThanOrEqual(4);
+  });
+
+  it('cuts data into the same frames', () => {
+    for (const c of vectors.split) expect(splitFrames(c.data, c.crc)).toEqual(c.frames);
+    expect(() => splitFrames('x'.repeat(FRAME_CHUNK * MAX_FRAMES + 1), 'aaaaaaaa')).toThrow('qr-too-big');
+  });
+
+  it('collects frames in any order, with repeats, and drops a stale set', () => {
+    for (const c of vectors.assemble) {
+      const asm = new FrameAssembler();
+      const seen = c.input.map((raw) => { const r = asm.add(raw); return r ? [r.got, r.need] : null; });
+      expect(seen, c.name).toEqual(c.progress);
+    }
+  });
+
+  it('reassembles every split vector and ends complete', async () => {
+    for (const c of vectors.split) {
+      const asm = new FrameAssembler();
+      let last = null;
+      for (const f of [...c.frames].reverse()) last = asm.add(f);
+      expect(last?.complete).toBe(true);
+      expect(asm.frames()).toHaveLength(c.frames.length);
+    }
+  });
+
+  it('picks the lowest QR version and keeps every frame within the scannable limit', () => {
+    for (const v of vectors.versions) {
+      const qr = qrcode(0, QR_LEVEL);
+      qr.addData(v.text);
+      qr.make();
+      expect((qr.getModuleCount() - 17) / 4, v.text).toBe(v.version);
+      expect(lowestVersion(v.text, QR_LEVEL), v.text).toBe(v.version);
+    }
+    for (const c of vectors.split) for (const f of c.frames) expect(lowestVersion(f, QR_LEVEL)).toBeLessThanOrEqual(MAX_FRAME_VERSION);
   });
 });

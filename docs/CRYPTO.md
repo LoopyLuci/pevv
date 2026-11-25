@@ -56,6 +56,30 @@ rejects reuse of the last accepted step, and is **rate-limited**: 5 free tries,
 then 30 s lockout doubling up to 1 h (also applied to password guesses). The
 limiter state is in `localStorage`, so it slows casual guessing only.
 
+### Authenticator frequency (`secondFactorRecheck`)
+
+By default the code is asked at every login. The sealed meta can relax that to once a day, week or month, or to "only on a
+new device" (`secondFactorRecheck`, per vault and synced, see VAULT_FORMAT.md). Only the authenticator code is relaxed: the master
+password or passkey is always required, and a passkey or key file that is a second factor is still asked every time.
+
+- **The record is per device and local** (`localStorage` `lv-pevv-2fa-trust:<vaultId>` on web and desktop, app preferences on
+  Android): `{ t, mac }` where `t` is when the code was last accepted here.
+- **It cannot be forged by editing `t`, and the master password alone does not forge it.**
+  `tag = HMAC-SHA256(vault key, "luciverse/pevv/v1/2fa-trust" | vault id | device id | key epoch | trust epoch | t)` and
+  `mac = HMAC-SHA256(device key, tag)`. The device key never leaves the device: a non-extractable WebCrypto key in IndexedDB on
+  web and desktop, an Android Keystore HMAC key on Android. Someone who phished the password (so holds the vault key) still has no
+  device key, so on their own device they are a new device and are asked for the code. If no device key is available nothing is
+  trusted and the code is asked every time.
+- **New device** means a device with no valid record: it has never passed the code for this vault (or its record was reset).
+- **Clock rollback:** a `t` in the future counts as expired for every setting, including "new device".
+- **Resets:** a password change, a revoked device, replacing or removing the authenticator (all bump `trustEpoch`) and a key
+  rotation (new vault key and key epoch) invalidate every device's record. They are asked for the code at their next unlock.
+- **Changing the setting needs a valid current code** (and the authenticator must be on). The device that passes the code there is
+  remembered like a normal login.
+- The browser extension does not use this: it always asks (it keeps no raw vault key and no device key).
+- Limits, honestly: someone who controls the unlocked device or its storage and key store can use the device key there, and a
+  clock set back by less than the window only extends it by that much.
+
 ## Recovery
 - **10 one-time recovery codes**, 100 bits each (`XXXXX-XXXXX-XXXXX-XXXXX`
   base32). Each code is its own slot (HKDF → KEK). A used code's slot is deleted

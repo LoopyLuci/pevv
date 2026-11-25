@@ -12,7 +12,6 @@ import { validateFile } from './vault';
 import { vaultRevokedLocally } from './devices';
 
 export const SYNC_PATH = '/vault/pevv.vault.json';
-const MAX = 200_000; // stays under the server per-row cap (pevv_blobs check, 262144)
 
 let started = false;
 let lastWritten = '';
@@ -31,10 +30,6 @@ function mirror(file: VaultFile | null): void {
   }
   if (!usePevv.getState().prefs.sync) return;
   const body = JSON.stringify(file);
-  if (body.length > MAX) {
-    usePevv.setState({ error: 'Vault is too large to sync (limit ≈ 200 KB of ciphertext). It is still saved on this device.' });
-    return;
-  }
   const existing = lq.readFile(SYNC_PATH)?.body;
   if (existing && existing !== body) {
     try {

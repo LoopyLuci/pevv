@@ -231,7 +231,9 @@ object VaultEngine {
 
     fun setTotp(file: VaultFile, session: Session, meta: VaultMeta, cfg: TotpConfig?): Pair<VaultFile, VaultMeta> {
         val r = meta.require
-        val nextMeta = meta.with(mapOf("require" to r.copy(totp = cfg != null).toJson(), "totpLastStep" to jnull))
+        // A new (or removed) authenticator starts a new trust epoch: nothing remembered about the old one counts.
+        val epoch = SecondFactorTrust.epochOf(meta) + 1
+        val nextMeta = meta.with(mapOf("require" to r.copy(totp = cfg != null).toJson(), "totpLastStep" to jnull, "trustEpoch" to jnum(epoch)))
         val totp = cfg?.let { Crypto.sealJson(session.raw, it.toJson(), Crypto.Aad.totp(file.id)).toJson() } ?: jnull
         return commit(file, session, nextMeta, mapOf("totp" to totp)) to nextMeta
     }

@@ -124,7 +124,8 @@ class Relay(private val auth: Supabase) {
         var busy = false
         var closed = false
         val incoming = LinkedHashMap<String, Gen>()
-        val maxParts = 8
+        // No size cap on a vault: a body is cut into RELAY_FRAME parts; this only bounds the part counter a peer can claim.
+        val maxParts = 10_000
         lateinit var ch: RealtimeSocket.Channel
 
         fun flush() {
@@ -187,7 +188,7 @@ class Relay(private val auth: Supabase) {
 
         return object : RosterLink {
             override fun publish(body: String) {
-                if (closed || body.isEmpty() || body == current || body.length > maxParts * Transfer.RELAY_FRAME) return
+                if (closed || body.isEmpty() || body == current) return
                 current = body
                 gen = "${peekRev(body)}:${body.length}:${System.currentTimeMillis()}"
                 ch.send("rhave", buildJsonObject { put("id", vaultId); put("rev", peekRev(body)) })

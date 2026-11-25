@@ -132,3 +132,21 @@ describe('key rotation in the store', () => {
     expect(f.v === 1).toBe(false);
   });
 });
+
+describe('no size cap on the synced vault', () => {
+  it('mirrors a vault far past the old 200 KB limit and raises no error', async () => {
+    const { startVaultSync, SYNC_PATH } = await import('@/pevv/sync');
+    const { useCloudFiles } = await import('@/pevv/host/cloud');
+    useCloudFiles.setState({ filesLoaded: true, files: [] });
+    const stop = startVaultSync();
+    try {
+      for (let i = 0; i < 4; i++) await S.saveEntry(null, { type: 'note', title: `big ${i}`, notes: `${i}`.repeat(120_000) });
+      const body = JSON.stringify(state().file);
+      expect(body.length).toBeGreaterThan(262_144);
+      expect(useCloudFiles.getState().readFile(SYNC_PATH)?.body).toBe(body);
+      expect(state().error).toBeNull();
+    } finally {
+      stop();
+    }
+  });
+});

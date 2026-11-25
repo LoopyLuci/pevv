@@ -25,8 +25,15 @@ object Transfer {
     const val HANDOFF_TTL_MS = 3 * 60 * 1000L
     const val QR_HOLD_MS = 10 * 60 * 1000L
     const val HANDOFF_PATH = "/vault/pevv-handoff.json"
-    private const val CHUNK = 520
-    private const val MAX_FRAMES = 12
+    /**
+     * Characters of base64url per offline code: a whole frame fits QR version 12 at error correction M, which a
+     * phone reads from arm's length. A bigger vault takes more frames (shown as a cycling, numbered sequence).
+     * Same numbers as src/pevv/qr.ts; both are tested against vectors/qr-frames.json. Older apps stopped at 12 frames.
+     */
+    const val FRAME_CHUNK = 260
+    const val MAX_FRAMES = 9999
+    /** The highest QR version a frame may need at error correction M (checked in tests). */
+    const val MAX_FRAME_VERSION = 12
 
     class Handoff(val key: String, val envelope: JsonObject)
 
@@ -67,9 +74,31 @@ object Transfer {
         val gz = gzip(Bytes.utf8(file.toText()))
         val data = b64url(gz)
         val crc = sha8(gz)
-        val n = maxOf(1, (data.length + CHUNK - 1) / CHUNK)
+        return splitFrames(data, crc)
+    }
+
+    /** Cuts base64url data into numbered `PEVV1|i|n|crc|chunk` frames. Throws `qr-too-big` past [MAX_FRAMES]. */
+    fun splitFrames(data: String, crc: String): List<String> {
+        val n = maxOf(1, (data.length + FRAME_CHUNK - 1) / FRAME_CHUNK)
         if (n > MAX_FRAMES) throw TransferError("qr-too-big")
-        return (0 until n).map { i -> "PEVV1|$i|$n|$crc|${data.substring(i * CHUNK, minOf(data.length, (i + 1) * CHUNK))}" }
+        return (0 until n).map { i -> "PEVV1|$i|$n|$crc|${data.substring(i * FRAME_CHUNK, minOf(data.length, (i + 1) * FRAME_CHUNK))}" }
+    }
+
+    class FrameProgress(val got: Int, val need: Int) {
+        val complete get() = got == need
+    }
+
+    /**
+     * Collects scanned frames into [frames] in any order, with repeats. A frame of another set (other crc or
+     * count) means the sender moved on, so what was collected is dropped. Null for text that is not a frame.
+     */
+    fun addFrame(frames: MutableList<String>, raw: String): FrameProgress? {
+        val f = parseFrame(raw) ?: return null
+        val first = frames.firstOrNull()?.let { parseFrame(it) }
+        if (first != null && (first.crc != f.crc || first.n != f.n)) frames.clear()
+        frames.removeAll { parseFrame(it)?.i == f.i }
+        frames.add(raw.trim())
+        return FrameProgress(frames.size, f.n)
     }
 
     private val FRAME = Regex("^PEVV1\\|(\\d+)\\|(\\d+)\\|([0-9a-f]{8})\\|([A-Za-z0-9_-]*)$")

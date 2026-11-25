@@ -4,7 +4,7 @@ Sync copies the **encrypted** vault file between your devices. The server only e
 ([SYNC_SELF_HOSTING.md](SYNC_SELF_HOSTING.md) says what it can see). This page is the contract that the TypeScript
 clients (web, extension, desktop webview) and the Kotlin client (Android) both implement. The code is
 `src/pevv/merge.ts`, `rotate.ts`, `store.ts`, `host/cloud.ts` and `android/.../core/Merge.kt`, `Rotate.kt`,
-`store/VaultController.kt`, `sync/SyncManager.kt`; the SQL is `supabase/migrations/0002_pevv_hardening.sql`.
+`store/VaultController.kt`, `sync/SyncManager.kt`; the SQL is `supabase/migrations/0002_pevv_hardening.sql` and `0003_pevv_no_size_cap.sql`.
 
 ## Lanes
 
@@ -22,7 +22,7 @@ Every row has a server revision `rev` (monotonic, bumped by the server). A clien
     pevv_put(p_path, p_body, p_expected_rev)  ->  {ok: true, rev}  |  {ok: false, error, ...}
 
 The write is accepted only while the row is still at `p_expected_rev` (0 means "no row yet"). Errors: `conflict` (answer
-carries the newer `body` and `rev`), `rate-limited`, `too-large`, `rev-regressed` (the vault's own `rev` went down),
+carries the newer `body` and `rev`), `rate-limited`, `too-large` (only from a server that has not applied 0003 yet), `rev-regressed` (the vault's own `rev` went down),
 `not-allowed`, `bad-body`, `not-signed-in`. On `conflict` the client stores the server copy, **merges** it with its own
 (below) and writes again, at most twice per attempt. A write the server refuses never discards local data: the vault stays
 on the device and the status screen says why.
@@ -115,22 +115,23 @@ Divergences found between the two implementations while building the suite were 
 ## What the status screen tells the user
 
 Last synced, whether changes are pending, conflicts resolved (and, per item, the kept losing versions with secret values
-masked until shown), and errors in plain language (offline, too many changes, vault too large, copy from a removed device
+masked until shown), and errors in plain language (offline, too many changes, a server that still has the old size limit, copy from a removed device
 ignored, copy under an old key ignored, a copy that cannot be opened, refused by the server, signed out). English and
 Spanish. Web/extension/desktop: `src/pevv/ui/SyncStatus.tsx` fed by `src/pevv/syncStatus.ts`; Android: Settings > Sync.
 
 ## Self-hosting the hardened schema
 
-Apply `supabase/migrations/0001_pevv_sync.sql` and then `0002_pevv_hardening.sql` (SQL editor or `supabase db push`). The
-second file is idempotent and does not change the first. It adds:
+Apply `supabase/migrations/0001_pevv_sync.sql`, then `0002_pevv_hardening.sql`, then `0003_pevv_no_size_cap.sql` (SQL editor or
+`supabase db push`). The second and third files are idempotent and do not change the earlier ones. Do not run 0002 again after
+0003 (it would put the old size limit back). 0002 adds:
 
 - **Revision CAS**: `pevv_put` (security invoker, so RLS stays in force), server `rev`, `doc_rev` (the vault's own `rev`,
   must not go down), `vault_id`.
 - **History**: the last `history_keep` (default 20) revisions per blob in `pevv_blob_history` (read through
   `pevv_history` and `pevv_history_get`; clients cannot write it). Restore is done client side from a revision (above).
 - **Soft delete**: `pevv_delete` marks the row; `pevv_undelete` restores it. Plain `delete` is turned into a soft delete.
-- **Size cap and rate limit** (`pevv_config`): `max_body` (262144 bytes), `rate_per_minute` (60 writes per user).
-  Settings are not readable or writable by clients.
+- **Rate limit** (`pevv_config`): `rate_per_minute` (60 writes per user). Settings are not readable or writable by clients.
+  0002 also capped a blob at 262144 bytes (`max_body`); **0003 removes that cap**, see below.
 - **`strict_cas`** (default false): set to `true` to refuse plain upserts, so only `pevv_put` writes. Turn it on once every
   device runs a client that knows `pevv_put` (older clients use plain upserts, which still work with `strict_cas` off).
 - **Realtime publication**: `pevv_blobs` is added to `supabase_realtime`, so devices hear about changes (RLS applies: a user
@@ -146,11 +147,26 @@ second file is idempotent and does not change the first. It adds:
   `update public.pevv_config set value = 'true' where key = 'open_roster';`. The web client's roster lane uses the account
   session when signed in and falls back to the anonymous relay session (which then needs `open_roster`).
 
+### No size limit (0003)
+
+A person syncs their own vault between their own devices, so nothing limits how big the sealed vault may be: not the
+clients (web, desktop, extension, Android), not the QR and live device lanes, not the Transferd PSP/1 protocol, and, with
+`0003_pevv_no_size_cap.sql`, not the database. 0003 drops the `char_length(body)` check from 0001 and the
+`pevv_blobs_body_bytes` check from 0002, deletes the `max_body` setting and recreates the guard trigger without the size
+test. What still protects the account is not a size cap: owner-only RLS, compare-and-swap, the monotonic revision guard,
+history, soft delete and the per-user write rate limit.
+
+Large bodies are sent in pieces where a transport has a hard message size: the Realtime lanes cut a body into 48,000
+character parts (a part counter, not a size, is bounded), and PSP/1 reads a blob body in 64 KiB chunks so a header that
+lies about its size cannot reserve memory. What can still stop a very large vault is outside PEVV: the request size limit
+of your API gateway or proxy, the hosting plan's database size, and (for the offline QR codes) how many codes a person is
+willing to scan.
+
 ### Testing the SQL
 
 `npm run test:sql` starts a throwaway PostgreSQL cluster, loads a stub of the Supabase pieces (`auth.uid()`, roles,
-`realtime.messages`, the publication), applies 0001, some legacy rows, 0002 twice (idempotence) and runs
-`tests/sql/hardening.test.sql` (CAS, conflicts, history, soft delete and restore, size cap, rate limit, RLS between two
+`realtime.messages`, the publication), applies 0001, some legacy rows, 0002 and 0003 twice each (idempotence) and runs
+`tests/sql/hardening.test.sql` (CAS, conflicts, history, soft delete and restore, no size cap, rate limit, RLS between two
 users, anon denied, Realtime topic policy). It needs PostgreSQL binaries: set `PEVV_PG_BIN` to the folder with `initdb`,
 `pg_ctl` and `psql`; optional `PEVV_SQL_TMP` (scratch folder) and `PEVV_PG_PORT`.
 

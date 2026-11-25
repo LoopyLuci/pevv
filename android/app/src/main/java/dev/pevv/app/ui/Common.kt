@@ -2,7 +2,6 @@ package dev.pevv.app.ui
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Color as AColor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -44,10 +46,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import dev.pevv.app.R
 import dev.pevv.app.core.DecryptError
 import dev.pevv.app.core.TransferError
@@ -170,16 +168,45 @@ fun Done(text: String) {
     }
 }
 
-/** A QR code as an image with a text description for screen readers. */
+/**
+ * A QR code as an image with a text description for screen readers. Black on white even in dark mode, scales to
+ * the width available, and while it is on screen the display goes to full brightness and stays on.
+ */
 @Composable
-fun QrImage(text: String, description: String, size: Int = 512, modifier: Modifier = Modifier) {
-    val bmp = remember(text) { qrBitmap(text, size) }
-    Image(bmp.asImageBitmap(), contentDescription = description, modifier = modifier.fillMaxWidth())
+fun QrImage(text: String, description: String, size: Int = 1024, modifier: Modifier = Modifier) {
+    val bmp = remember(text, size) { qrBitmap(text, size) }
+    KeepBright()
+    Image(
+        bmp.asImageBitmap(),
+        contentDescription = description,
+        modifier = modifier.fillMaxWidth().aspectRatio(1f).background(androidx.compose.ui.graphics.Color.White),
+        filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
+    )
+}
+
+/** Full screen brightness and no screen timeout while this is in the composition, restored after. */
+@Composable
+fun KeepBright() {
+    val ctx = LocalContext.current
+    DisposableEffect(ctx) {
+        var c: android.content.Context? = ctx
+        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+        val window = (c as? android.app.Activity)?.window
+        val before = window?.attributes?.screenBrightness
+        window?.let {
+            it.attributes = it.attributes.also { a -> a.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL }
+            it.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window?.let {
+                it.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                it.attributes = it.attributes.also { a -> a.screenBrightness = before ?: android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE }
+            }
+        }
+    }
 }
 
 fun qrBitmap(text: String, size: Int): Bitmap {
-    val hints = mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M, EncodeHintType.MARGIN to 2, EncodeHintType.CHARACTER_SET to "UTF-8")
-    val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, hints)
-    val px = IntArray(size * size) { i -> if (m.get(i % size, i / size)) AColor.BLACK else AColor.WHITE }
-    return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888)
+    val (side, px) = dev.pevv.app.core.QrEncode.render(text, size)
+    return Bitmap.createBitmap(px, side, side, Bitmap.Config.ARGB_8888)
 }

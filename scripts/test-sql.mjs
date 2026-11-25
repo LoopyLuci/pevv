@@ -53,6 +53,8 @@ try {
   if (!failed) psql(join(root, 'tests', 'sql', 'legacy.sql'), 'legacy rows');
   if (!failed) psql(migrations('0002_pevv_hardening.sql'), '0002 (first run)');
   if (!failed) psql(migrations('0002_pevv_hardening.sql'), '0002 (second run: must be idempotent)');
+  if (!failed) psql(migrations('0003_pevv_no_size_cap.sql'), '0003 (first run)');
+  if (!failed) psql(migrations('0003_pevv_no_size_cap.sql'), '0003 (second run: must be idempotent)');
   let ok = 0;
   if (!failed) {
     const p = psql(join(root, 'tests', 'sql', 'hardening.test.sql'), 'hardening tests');
