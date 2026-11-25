@@ -35,6 +35,7 @@ mod provider_core;
 mod provider_win;
 mod transport;
 mod transport_core;
+mod updater;
 mod usbkey;
 mod vault_store;
 mod winpath;
@@ -380,7 +381,10 @@ fn start_lock_signals(app: &AppHandle) {
 pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build());
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        // Signed updates only; inert while the pubkey in tauri.conf.json is the placeholder (updater.rs).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updater::Pending::default());
     // The auto-type chooser is placed by the app each time, never restored. With PEVV_DATA_DIR the
     // plugin is left out: it keeps its file in the OS config folder, outside the override.
     if datadir::override_dir().is_none() {
@@ -437,7 +441,11 @@ pub fn run() {
             transport::transport_peer_approve,
             transport::transport_peer_revoke,
             transport::transport_sync_now,
-            transport::transport_take_staged
+            transport::transport_take_staged,
+            updater::update_enabled,
+            updater::update_check,
+            updater::update_download,
+            updater::update_install
         ])
         .setup(|app| {
             let handle = app.handle().clone();

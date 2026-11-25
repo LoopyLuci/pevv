@@ -52,6 +52,10 @@ fn main() {
         "transport_peer_revoke",
         "transport_sync_now",
         "transport_take_staged",
+        "update_enabled",
+        "update_check",
+        "update_download",
+        "update_install",
     ])))
     .expect("tauri build failed");
 }

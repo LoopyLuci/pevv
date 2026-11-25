@@ -26,7 +26,7 @@ const ipc: DesktopIpc = {
 function seedPrefs(): void {
   try {
     if (localStorage.getItem('lv-pevv-prefs') === null) {
-      localStorage.setItem('lv-pevv-prefs', JSON.stringify({ autoLockMin: 5, lockOnHide: true, clipboardSec: 30, autofill: false, sync: false, revealReauthSec: 120 }));
+      localStorage.setItem('lv-pevv-prefs', JSON.stringify({ autoLockMin: 5, lockOnHide: true, clipboardSec: 30, autofill: false, sync: false, revealReauthSec: 120, autoUpdate: true, updateMode: 'manual' }));
     }
   } catch { /* blocked storage */ }
 }
@@ -108,9 +108,13 @@ async function boot(): Promise<void> {
   const { LinkPrompts } = await import('./BrowserLink');
   const { CliPrompts } = await import('./CliAccess');
   const { ProviderPrompts } = await import('./PasskeyProvider');
+  const { UpdatePrompt, updateIpc } = await import('./UpdatePrompt');
+  const { startUpdater } = await import('./updater');
   const promptRoot = document.createElement('div');
   document.body.appendChild(promptRoot);
-  createRoot(promptRoot).render(createElement('div', null, createElement(LinkPrompts), createElement(CliPrompts), createElement(ProviderPrompts)));
+  createRoot(promptRoot).render(createElement('div', null, createElement(LinkPrompts), createElement(CliPrompts), createElement(ProviderPrompts), createElement(UpdatePrompt)));
+  // Signed updates: checked on start and daily while Settings > Updates is on; always asks before installing.
+  startUpdater(updateIpc);
   void initLocale();
   createRoot(document.getElementById('root')!).render(createElement(StrictMode, null, createElement(PevvStandalone)));
 }

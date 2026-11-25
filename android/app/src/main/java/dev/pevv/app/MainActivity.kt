@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import dev.pevv.app.ui.AppRoot
 import dev.pevv.app.ui.PevvTheme
+import dev.pevv.app.update.UpdateManager
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(i: Intent?) {
+        if (i?.action == UpdateManager.ACTION_INSTALL_UPDATE) { i.action = null; pevv.scope.launch(kotlinx.coroutines.Dispatchers.IO) { pevv.updates.installReady(userInitiated = true) } }
         val data = i?.data ?: return
         if (data.scheme == "dev.pevv.app" && data.host == "auth") {
             pevv.scope.launch { try { pevv.supabase.handleLink(data); pevv.sync.pull() } catch (_: Exception) { } }
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
         if (stoppedAt != 0L && System.currentTimeMillis() - stoppedAt >= mins * 60_000L) app.vault.lock()
         stoppedAt = 0
         app.sync.setForeground(true)
+        app.updates.foreground = true
         app.vault.touch()
     }
 
@@ -76,7 +79,10 @@ class MainActivity : ComponentActivity() {
         val app = pevv
         stoppedAt = System.currentTimeMillis()
         app.sync.setForeground(false)
+        app.updates.foreground = false
         if (!isChangingConfigurations) app.vault.lockAfter(app.prefs.lockMinutes * 60_000L)
+        // Backgrounded: an automatic install that was waiting for the vault to be out of use may go now.
+        app.updates.retryDeferred()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

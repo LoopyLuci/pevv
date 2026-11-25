@@ -57,6 +57,7 @@ private fun UnlockedHost() {
             SettingsRoute.IMPORT -> ImportScreen(::pop)
             SettingsRoute.FACTORS -> FactorsScreen(::pop)
             SettingsRoute.SYNC -> SyncScreen(::pop)
+            SettingsRoute.UPDATES -> UpdatesScreen(::pop)
             SettingsRoute.MAIN -> SettingsScreen(::pop, onShare = { push(Route.Share) }, onRoute = { push(Route.Sub(it)) })
         }
         Route.Share -> ShareVaultScreen(::pop)

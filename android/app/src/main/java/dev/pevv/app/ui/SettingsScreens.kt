@@ -58,7 +58,7 @@ import dev.pevv.app.store.VaultController
 import dev.pevv.app.sync.SyncConfig
 import kotlinx.serialization.json.JsonObject
 
-enum class SettingsRoute { MAIN, DEVICES, RECOVERY, IMPORT, FACTORS, SYNC }
+enum class SettingsRoute { MAIN, DEVICES, RECOVERY, IMPORT, FACTORS, SYNC, UPDATES }
 
 @Composable
 private fun Row2(label: String, content: @Composable () -> Unit) {
@@ -133,6 +133,7 @@ fun SettingsScreen(onBack: () -> Unit, onShare: () -> Unit, onRoute: (SettingsRo
             HorizontalDivider()
 
             SectionTitle(stringResource(R.string.sec_system))
+            SecondaryButton(stringResource(R.string.sec_updates), { onRoute(SettingsRoute.UPDATES) })
             SecondaryButton(stringResource(R.string.setup_autofill), {
                 val i = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE, Uri.parse("package:${ctx.packageName}"))
                 try { ctx.startActivity(i) } catch (_: Exception) { ctx.startActivity(Intent(Settings.ACTION_SETTINGS)) }

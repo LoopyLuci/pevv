@@ -35,9 +35,13 @@ export interface Prefs {
   autofill: boolean;
   sync: boolean;
   revealReauthSec: number;
+  /** Desktop app: look for a signed update on start and daily (asks before installing). */
+  autoUpdate: boolean;
+  /** Desktop app: what to do with a found update (default: ask first). */
+  updateMode: 'manual' | 'download' | 'install';
 }
 
-export const DEFAULT_PREFS: Prefs = { autoLockMin: 5, lockOnHide: true, clipboardSec: 20, autofill: false, sync: false, revealReauthSec: 120 };
+export const DEFAULT_PREFS: Prefs = { autoLockMin: 5, lockOnHide: true, clipboardSec: 20, autofill: false, sync: false, revealReauthSec: 120, autoUpdate: true, updateMode: 'manual' };
 
 export type Status = 'none' | 'locked' | 'second-factor' | 'set-password' | 'unlocked';
 export type View = 'items' | 'generator' | 'audit' | 'settings' | 'activity' | 'devices' | 'qr';

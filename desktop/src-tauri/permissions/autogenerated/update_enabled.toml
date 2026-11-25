@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-enabled"
+description = "Enables the update_enabled command without any pre-configured scope."
+commands.allow = ["update_enabled"]
+
+[[permission]]
+identifier = "deny-update-enabled"
+description = "Denies the update_enabled command without any pre-configured scope."
+commands.deny = ["update_enabled"]

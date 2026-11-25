@@ -11,9 +11,12 @@ import dev.pevv.app.store.VaultController
 import dev.pevv.app.sync.Relay
 import dev.pevv.app.sync.Supabase
 import dev.pevv.app.sync.SyncManager
+import dev.pevv.app.update.UpdateManager
+import dev.pevv.app.update.UpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /** Process-wide singletons. The autofill and credential services run in this process and use the same unlocked state. */
 class PevvApp : Application() {
@@ -24,6 +27,7 @@ class PevvApp : Application() {
     lateinit var relay: Relay; private set
     lateinit var sync: SyncManager; private set
     lateinit var bio: BiometricVault; private set
+    lateinit var updates: UpdateManager; private set
 
     override fun onCreate() {
         super.onCreate()
@@ -36,6 +40,11 @@ class PevvApp : Application() {
         // A new vault key makes the biometric copy of the old one useless: drop it, the next password unlock can enrol again.
         vault.onKeyChanged { bio.forget(); prefs.biometricOn = false }
         sync.start()
+        updates = UpdateManager(this) { vault.status != VaultController.Status.NONE && vault.status != VaultController.Status.LOCKED }
+        // A deferred automatic install goes ahead as soon as the vault locks.
+        vault.onLock { updates.retryDeferred() }
+        scope.launch { updates.cleanStale() }
+        UpdateScheduler.schedulePeriodic(this)
         // Screen off with "lock immediately" set: drop the key before anything else can look at the phone.
         registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {

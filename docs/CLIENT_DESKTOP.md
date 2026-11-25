@@ -263,6 +263,40 @@ Settings, "Passkeys for other sites (Windows)": the four requirements (Windows 1
 
 Tested: `tests/unit/pevv.passkeyProvider.test.ts` (rpIdHash, COSE key and DER signature against known vectors including the RFC 6979 P-256 signature, authenticatorData layout, create then verify, counters, the request handler with a fake vault: locked, declined, excluded, wrong site, allow list, chooser, malformed; the item riding through a real sealed vault and being invisible to lists, login matching, auto-type, reuse and the item list; the AAGUID equal in the Rust file; section visibility) and `cargo test` with and without the feature (`provider_core`: request decode for both commands, with and without a command byte, size and shape limits, response encoding, GetInfo, HRESULT mapping, the broker end to end with a fake window including locked, cancelled and lying answers, the manifest naming the class id; `provider_win`: struct layouts, IIDs, the logo; `provider`: build parsing, the reason line, JSON names). **Not tested, because they need Windows 11 and an MSIX install:** that the functions exist on a real build, registration, the COM class being created by Windows, the real request bytes (command byte, any status byte), the response being accepted, the Windows dialog, the toggle in Settings, activation by Windows when PEVV is not running, installing the MSIX, signing (`build-msix.ps1` was run once, unsigned, against a build without the feature: `makeappx pack` accepted the manifest and wrote `target/msix/PEVV_0.1.0.0_x64.msix`), and the Linux compile of the feature (the D-Bus system library was not available where it was written; the feature code is platform-neutral except `provider_win.rs`).
 
+## Updates
+
+The desktop app looks for a new release when it starts and once a day (Settings > Updates has a switch for the automatic check and a
+"Check now" button). What happens when one is found is the **update mode** in Settings > Updates (English and Spanish):
+
+| Mode | Behaviour |
+|---|---|
+| Manual (default) | Tells you with an "Update now" / "Later" card. Nothing is downloaded or installed until you press "Update now". |
+| Auto-download | Downloads and verifies in the background, then shows "Restart to update" / "Later". It installs only when you press the button. |
+| Auto-download and install | Downloads and installs in the background with no prompt, but only while the vault is **locked** (or none exists). With the vault unlocked, in the second-factor step or in setup it waits and installs when the vault locks (on Windows closing the window locks it), so a restart never interrupts an edit. Installing as PEVV quits is not implemented yet. |
+
+The signature is checked in every mode: the shell verifies it when downloading and again before installing, and a package that fails is dropped.
+
+How it stays safe:
+
+- The Rust shell (`src/updater.rs`, `tauri-plugin-updater`) fetches `https://github.com/LoopyLuci/pevv/releases/latest/download/latest.json` and
+  verifies the minisign signature of the installer against the `pubkey` in `tauri.conf.json` (`plugins.updater`). The check cannot be
+  turned off and a bad signature is refused. The webview has no updater plugin permission: its restricted capability allows only the
+  three commands `update_enabled`, `update_check` and `update_install` (`capabilities/default.json`).
+- The updater is disabled at run time while the pubkey is the placeholder `REPLACE_WITH_UPDATER_PUBKEY`: no request is made.
+- Only the Windows NSIS installer and the Linux AppImage are listed in `latest.json`. The MSI and deb are not auto-updated.
+
+### Maintainer steps (once)
+
+1. Generate the signing key pair: `npx tauri signer generate -w <path-outside-the-repo>/pevv-updater.key` (choose a password).
+   Keep the private key and password out of the repository and back them up: losing them means installed apps can never update again.
+2. Set two repository secrets: `TAURI_SIGNING_PRIVATE_KEY` (the key file's contents) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+3. Put the public key (the contents of `pevv-updater.key.pub`, one line) into `desktop/src-tauri/tauri.conf.json` as `plugins.updater.pubkey`.
+4. Tag a release. The `release` workflow signs the NSIS and AppImage installers (`*.sig`), writes `latest.json` with `scripts/make-latest-json.mjs` and
+   attaches both to the draft release. Publish the draft: the endpoint above serves the latest *published* release.
+
+Without the two secrets (forks, local builds) the build skips the signatures and no `latest.json` is made. Changing the key later strands
+apps that carry the old one: they must be reinstalled by hand once.
+
 ## Build and install
 
 Needs Node 20+, Rust stable and the platform toolchain for Tauri 2 (Windows: MSVC build tools and WebView2, which Windows 11 has; Linux: `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libssl-dev`, `build-essential`, `patchelf`; D-Bus access uses the pure-Rust zbus, no libdbus needed).
@@ -277,7 +311,7 @@ cd desktop/src-tauri && cargo test --features win-passkey-provider   # the Windo
 cd desktop/src-tauri && cargo test --no-default-features             # without the Transferd device link (on by default)
 ```
 
-Bundles (`desktop/src-tauri/target/release/bundle/`): `nsis/PEVV_0.1.0_x64-setup.exe` and `msi/PEVV_0.1.0_x64_en-US.msi` on Windows; `appimage/` and `deb/` on Linux (build those on Linux). Icons live in `desktop/src-tauri/icons/` (regenerate from a 512 px PNG with `npx tauri icon <png> -o desktop/src-tauri/icons`). The installers are not code-signed yet, so Windows SmartScreen warns on first run.
+Bundles (`desktop/src-tauri/target/release/bundle/`): `nsis/PEVV_0.2.0_x64-setup.exe` and `msi/PEVV_0.2.0_x64_en-US.msi` on Windows; `appimage/` and `deb/` on Linux (build those on Linux). Icons live in `desktop/src-tauri/icons/` (regenerate from a 512 px PNG with `npx tauri icon <png> -o desktop/src-tauri/icons`). The installers are not code-signed yet, so Windows SmartScreen warns on first run.
 
 ## Limitations
 

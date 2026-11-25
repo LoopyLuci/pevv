@@ -22,6 +22,7 @@ import { TransferdSection } from '../desktop/TransferdPanel';
 import { AutoTypeSection } from '../desktop/AutoType';
 import { CliAccessSection } from '../desktop/CliAccess';
 import { PasskeyProviderSection } from '../desktop/PasskeyProvider';
+import { UpdateSection } from '../desktop/UpdatePrompt';
 import { NewPasswordFields } from './AuthViews';
 import { CopyButton, ErrorLine, QrCode, Section, btn, btnDanger, btnPrimary, download, input, label, readFileText, useReauthGate } from './common';
 import { QrScanBox, QrShareButton } from './QrShare';
@@ -413,6 +414,7 @@ export function SettingsView() {
       {inDesktopApp() && <AutoTypeSection />}
       {inDesktopApp() && <CliAccessSection />}
       {inDesktopApp() && <PasskeyProviderSection />}
+      {inDesktopApp() && <UpdateSection />}
       <TotpSection />
       <RecoverySection />
       <Section title={t('behavior')} testId="pevv-behavior">

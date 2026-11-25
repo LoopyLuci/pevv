@@ -59,4 +59,40 @@ and installs next to a release build.
 
 - The audit log of the web app.
 - Google Play Services features (no ML Kit, no Play integrity, no Play-based credential bridge).
-- Automatic updates. Install new APKs yourself.
+
+## Updates
+
+Settings > Updates checks the GitHub releases of `LoopyLuci/pevv` (the latest-release API, no sign-in, HTTPS only) for
+`pevv-android-v<version>.apk` and `SHA256SUMS`. Pre-releases are ignored unless "Include pre-releases" is on. A background check runs
+about every 12 hours (network connected, battery not low); "Check for updates now" runs one at once. The screen also shows the
+current version and when the last check ran.
+
+Modes (the default is Manual):
+
+- **Manual:** checks and notifies. You tap "Download and install".
+- **Auto-download:** WorkManager downloads in the background (only on an unmetered network unless you turn that option off, and
+  only while the battery is not low), then posts "Update ready - tap to install".
+- **Auto-download and install:** the same download, then installation through a `PackageInstaller` session. An automatic install never
+  runs while the vault is unlocked and on screen; it waits until the vault is locked or the app is in the background. A tap by you is
+  never deferred.
+
+What is checked before anything is installed (any mismatch deletes the file and shows why):
+
+1. the APK's SHA-256 equals its line in `SHA256SUMS`;
+2. the package is `dev.pevv.app` and its `versionCode` is higher than the installed one;
+3. the APK's signing certificate equals the signing certificate of the running app (`PackageManager.getPackageArchiveInfo` with
+   `GET_SIGNING_CERTIFICATES`, compared with our own).
+
+The checks run again just before the install. Downloads live in the app's private cache and are deleted after use. A debug build
+(`dev.pevv.app.debug`) rejects release APKs, because the package name differs.
+
+**Silent install works only in one situation.** The update is applied without a prompt only on Android 12 (API 31) or later and when PEVV is
+the installer of record of itself, which happens after the first update PEVV installed on that phone (an APK installed from a browser,
+a file manager or `adb` leaves another app as the installer of record). Android may still ask. In every other case, including
+Android 11 and older, there is one tap: PEVV posts a notification that opens the system install prompt.
+
+Android also needs "Install unknown apps" enabled for PEVV; if it is off, Updates shows a button that opens that screen, and a
+background install posts a notification that does the same. On Android 13+ PEVV asks for the notification permission when you choose an
+automatic mode.
+
+Not tested on a device: the PackageInstaller flow, the silent path, the notifications and the WorkManager schedule.

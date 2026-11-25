@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.autofill)
+    implementation(libs.androidx.work)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.serialization.json)

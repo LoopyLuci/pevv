@@ -33,7 +33,20 @@ Out of scope:
 - The in-page TOTP / passkey second-factor *gates* being client-side: they are documented as a convenience barrier; the cryptographic
   boundary is the master password / PRF / recovery secret.
 - Findings in third-party services (Supabase, GitHub, browser vendors); report those upstream.
-- Unsigned release binaries (they are unsigned on purpose until a signing certificate exists).
+- Unsigned release binaries (they are not Authenticode-signed on purpose until a signing certificate exists; see Verifying downloads).
+
+## Verifying downloads
+
+The release binaries are **not Authenticode-signed** (no code-signing certificate exists yet), so Windows SmartScreen warns on first run
+("Windows protected your PC": More info > Run anyway) and Linux packages carry no distro signature. Check what you downloaded against the
+`SHA256SUMS` file attached to the same release:
+
+- Linux: `sha256sum -c --ignore-missing SHA256SUMS` in the folder with the downloads.
+- Windows (PowerShell): `(Get-FileHash .\PEVV_<version>_x64-setup.exe -Algorithm SHA256).Hash` and compare it, ignoring case, with the line for that file in `SHA256SUMS`.
+
+A checksum from the same page only proves the download was not corrupted; compare against a copy you trust (for example the release page
+opened over a different network). The desktop app's own updates are separate: it installs an update only if it carries a valid signature
+from PEVV's update key (the public half is in `desktop/src-tauri/tauri.conf.json`), and only after you click "Update now".
 
 ## Threat model summary
 

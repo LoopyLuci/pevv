@@ -29,5 +29,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const conf = JSON.parse(readFileSync(new URL('../desktop/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
   const csp = cspFor(conf.app.security.csp, (process.env.VITE_PEVV_SYNC_URL ?? '').trim());
   const cli = fileURLToPath(new URL('../node_modules/@tauri-apps/cli/tauri.js', import.meta.url));
-  run(process.execPath, [cli, 'build', '--config', JSON.stringify({ app: { security: { csp } } }), ...process.argv.slice(2)]);
+  // Updater artifacts (.sig files) need the signing key; without it (forks, local builds) build the installers only.
+  const signed = !!(process.env.TAURI_SIGNING_PRIVATE_KEY ?? '').trim() || !!(process.env.TAURI_SIGNING_PRIVATE_KEY_PATH ?? '').trim();
+  const override = { app: { security: { csp } }, ...(signed ? {} : { bundle: { createUpdaterArtifacts: false } }) };
+  if (!signed) console.log('TAURI_SIGNING_PRIVATE_KEY not set: building without updater signatures.');
+  run(process.execPath, [cli, 'build', '--config', JSON.stringify(override), ...process.argv.slice(2)]);
 }
